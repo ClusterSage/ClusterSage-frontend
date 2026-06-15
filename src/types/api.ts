@@ -1,0 +1,7 @@
+export type User = { id: string; organization_id: string; email: string; full_name?: string; role: string };
+export type AgentKey = { id: string; name: string; key_last4: string; expires_at?: string | null; revoked_at?: string | null; created_at: string; raw_key?: string | null };
+export type Cluster = { id: string; name: string; provider: string; status: string; agent_version?: string | null; last_seen_at?: string | null; created_at: string; updated_at: string };
+export type LogBatch = { id: string; blob_path: string; log_count: number; size_bytes: number; start_time?: string | null; end_time?: string | null; created_at: string };
+export type Issue = { id: string; namespace?: string | null; workload?: string | null; pod_name?: string | null; severity: string; issue_type: string; title: string; description?: string | null; status: string; first_seen_at: string; last_seen_at: string };
+export type ResourceSummary = { name: string; namespace?: string | null; kind: string; status?: string | null; age?: string | null; node_name?: string | null; restart_count?: number | null; labels: Record<string, string>; last_updated_at?: string | null; created_at?: string | null; metadata: Record<string, unknown> };
+export type ResourceLogEntry = { timestamp?: string | null; namespace?: string | null; pod?: string | null; container?: string | null; message: string; raw: Record<string, unknown> };
