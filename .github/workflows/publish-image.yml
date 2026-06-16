@@ -1,0 +1,48 @@
+name: Publish frontend image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to publish
+        required: false
+        default: ""
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  IMAGE_REPOSITORY: clustersage-frontend
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: acr-publish
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: ACR login
+        run: az acr login --name "${{ secrets.ACR_NAME }}"
+      - name: Build and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOGIN_SERVER="$(az acr show --name "${{ secrets.ACR_NAME }}" --query loginServer -o tsv)"
+          SHA_TAG="sha-${GITHUB_SHA::12}"
+          INPUT_TAG="${{ inputs.image_tag }}"
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://nexaflow.site \
+            -t "$LOGIN_SERVER/$IMAGE_REPOSITORY:$SHA_TAG" \
+            .
+          docker push "$LOGIN_SERVER/$IMAGE_REPOSITORY:$SHA_TAG"
+          if [ -n "$INPUT_TAG" ]; then
+            docker tag "$LOGIN_SERVER/$IMAGE_REPOSITORY:$SHA_TAG" "$LOGIN_SERVER/$IMAGE_REPOSITORY:$INPUT_TAG"
+            docker push "$LOGIN_SERVER/$IMAGE_REPOSITORY:$INPUT_TAG"
+          fi
