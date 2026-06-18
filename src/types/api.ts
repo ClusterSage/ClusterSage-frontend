@@ -10,6 +10,23 @@ export type ResourceAISuggestion = { id: string; cluster_id: string; incident_id
 export type RemediationApprovalResult = { suggestion_id: string; approval_id: string; approval_status: string; action_id?: string | null; action_status?: string | null; message: string };
 export type RemediationAction = { id: string; cluster_id: string; suggestion_id: string; approval_id: string; action_type: string; action_payload: Record<string, unknown>; status: string; requested_by_user_id?: string | null; picked_up_by_agent_id?: string | null; requested_at: string; picked_up_at?: string | null; completed_at?: string | null; error_message?: string | null; result?: Record<string, unknown> | null };
 export type AIClusterQuery = { id: string; cluster_id: string; user_id?: string | null; question: string; parsed_query?: Record<string, unknown> | null; answer_summary?: string | null; result?: Record<string, unknown> | null; ai_model?: string | null; created_at: string };
+export type ClusterMetricRollupItem = {
+  label: string;
+  namespace?: string | null;
+  value: number;
+  unit: "mcores" | "bytes";
+};
+export type ClusterMetricsOverview = {
+  collected_at?: string | null;
+  pod_cpu_mcores_total: number;
+  pod_memory_bytes_total: number;
+  node_cpu_mcores_total: number;
+  node_memory_bytes_total: number;
+  top_pods_by_cpu: ClusterMetricRollupItem[];
+  top_pods_by_memory: ClusterMetricRollupItem[];
+  top_nodes_by_cpu: ClusterMetricRollupItem[];
+  top_nodes_by_memory: ClusterMetricRollupItem[];
+};
 export type AlertLimitMetricType =
   | "resource_health"
   | "pod_restarts"

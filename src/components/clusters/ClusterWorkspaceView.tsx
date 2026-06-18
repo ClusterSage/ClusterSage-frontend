@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import type { AIClusterQuery, AIIncident, Cluster, ResourceSummary } from "@/types/api";
+import type { AIClusterQuery, AIIncident, Cluster, ClusterMetricRollupItem, ClusterMetricsOverview, ResourceSummary } from "@/types/api";
 
 const preferredKinds = ["Pod", "Deployment", "Service", "ReplicaSet", "StatefulSet", "DaemonSet", "Job", "CronJob", "Namespace"];
 const exampleQuestions = [
@@ -86,6 +86,25 @@ function toneHex(tone: CountItem["tone"]) {
     default:
       return "#63a2ff";
   }
+}
+
+function formatMetricValue(value: number, unit: "mcores" | "bytes") {
+  if (unit === "mcores") {
+    if (value >= 1000) return `${(value / 1000).toFixed(1)} cores`;
+    return `${Math.round(value)} mCPU`;
+  }
+  if (value >= 1024 ** 3) return `${(value / 1024 ** 3).toFixed(1)} GiB`;
+  if (value >= 1024 ** 2) return `${(value / 1024 ** 2).toFixed(1)} MiB`;
+  if (value >= 1024) return `${(value / 1024).toFixed(1)} KiB`;
+  return `${Math.round(value)} B`;
+}
+
+function metricItems(items: ClusterMetricRollupItem[], tone: CountItem["tone"]) {
+  return items.map((item) => ({
+    label: item.namespace ? `${item.namespace} / ${item.label}` : item.label,
+    value: item.unit === "mcores" ? Math.round(item.value) : Math.round(item.value / 1024 ** 2),
+    tone,
+  }));
 }
 
 function buildLinePath(items: CountItem[], width: number, height: number) {
@@ -285,10 +304,76 @@ function MetricUnavailableCard({ title, body }: { title: string; body: string })
   );
 }
 
+function RuntimeMetricCard({
+  title,
+  subtitle,
+  totalValue,
+  totalUnit,
+  collectedAt,
+  primaryLabel,
+  primaryItems,
+  secondaryLabel,
+  secondaryItems,
+  tone,
+}: {
+  title: string;
+  subtitle: string;
+  totalValue: number;
+  totalUnit: "mcores" | "bytes";
+  collectedAt?: string | null;
+  primaryLabel: string;
+  primaryItems: ClusterMetricRollupItem[];
+  secondaryLabel: string;
+  secondaryItems: ClusterMetricRollupItem[];
+  tone: CountItem["tone"];
+}) {
+  const primaryChartItems = metricItems(primaryItems, tone);
+  const secondaryChartItems = metricItems(secondaryItems, "slate");
+
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 shadow-[var(--shadow-sm)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-[var(--text)]">{title}</h2>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">{subtitle}</p>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 px-4 py-3 text-right">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Total</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{formatMetricValue(totalValue, totalUnit)}</p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">
+            {collectedAt ? `Collected ${new Date(collectedAt).toLocaleString()}` : "Collection time unavailable"}
+          </p>
+        </div>
+      </div>
+      <div className="mt-5 grid gap-4 xl:grid-cols-2">
+        <HorizontalBarChart
+          title={primaryLabel}
+          subtitle={primaryItems.length ? "Rendered from the latest runtime samples." : "No runtime samples available for this group yet."}
+          items={primaryChartItems}
+          emptyText="No samples available yet."
+          toneOverride={tone}
+        />
+        <HorizontalBarChart
+          title={secondaryLabel}
+          subtitle={secondaryItems.length ? "Rendered from the same collection window." : "No runtime samples available for this group yet."}
+          items={secondaryChartItems}
+          emptyText="No samples available yet."
+          toneOverride="slate"
+        />
+      </div>
+      <p className="mt-4 text-xs text-[var(--text-soft)]">
+        CPU bars are shown in millicores. Memory bars are shown in MiB for easy comparison.
+      </p>
+    </div>
+  );
+}
+
 export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; view: ClusterView }) {
   const [cluster, setCluster] = useState<Cluster | null>(null);
   const [resources, setResources] = useState<ResourceSummary[] | null>(null);
   const [incidents, setIncidents] = useState<AIIncident[] | null>(null);
+  const [metricsOverview, setMetricsOverview] = useState<ClusterMetricsOverview | null>(null);
+  const [metricsError, setMetricsError] = useState("");
   const [kind, setKind] = useState("All");
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
@@ -315,6 +400,17 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load cluster"));
   }, [clusterId]);
+
+  useEffect(() => {
+    if (view !== "dashboard") return;
+    setMetricsError("");
+    api<ClusterMetricsOverview>(`/api/clusters/${clusterId}/metrics/overview`)
+      .then(setMetricsOverview)
+      .catch((err) => {
+        setMetricsOverview(null);
+        setMetricsError(err instanceof Error ? err.message : "Failed to load runtime metrics");
+      });
+  }, [clusterId, view]);
 
   useEffect(() => {
     if (!["dashboard", "incidents"].includes(view) || incidents !== null || incidentLoading) return;
@@ -520,6 +616,16 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
         { label: "Minor", value: incidentSummary.minor, tone: "blue" as CountItem["tone"] },
       ];
 
+  const hasRuntimeMetrics = Boolean(
+    metricsOverview?.collected_at &&
+      (
+        metricsOverview.top_pods_by_cpu.length ||
+        metricsOverview.top_pods_by_memory.length ||
+        metricsOverview.top_nodes_by_cpu.length ||
+        metricsOverview.top_nodes_by_memory.length
+      ),
+  );
+
   if (error) return <div className="card border-[var(--danger-bg)] bg-[var(--bg-elevated)] text-[var(--danger-text)]">{error}</div>;
   if (!cluster || !resources) return <div className="card bg-[var(--bg-elevated)] text-[var(--text-muted)]">Loading cluster resources...</div>;
 
@@ -673,14 +779,45 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
           </div>
 
           <div className="space-y-4">
-            <MetricUnavailableCard
-              title="CPU usage"
-              body="This view still does not have a real metrics pipeline. CPU charts will become trustworthy only after Metrics Server or another time-series source is wired through the agent and backend."
-            />
-            <MetricUnavailableCard
-              title="Memory usage"
-              body="Memory panels are intentionally withheld until real runtime metrics are ingested end to end. This avoids misleading dashboard visuals."
-            />
+            {hasRuntimeMetrics && metricsOverview ? (
+              <>
+                <RuntimeMetricCard
+                  title="CPU usage"
+                  subtitle="Live runtime usage from the latest cluster metrics collection window."
+                  totalValue={metricsOverview.pod_cpu_mcores_total}
+                  totalUnit="mcores"
+                  collectedAt={metricsOverview.collected_at}
+                  primaryLabel="Top pods by CPU"
+                  primaryItems={metricsOverview.top_pods_by_cpu}
+                  secondaryLabel="Top nodes by CPU"
+                  secondaryItems={metricsOverview.top_nodes_by_cpu}
+                  tone="blue"
+                />
+                <RuntimeMetricCard
+                  title="Memory usage"
+                  subtitle="Memory usage from the same runtime collection window."
+                  totalValue={metricsOverview.pod_memory_bytes_total}
+                  totalUnit="bytes"
+                  collectedAt={metricsOverview.collected_at}
+                  primaryLabel="Top pods by memory"
+                  primaryItems={metricsOverview.top_pods_by_memory}
+                  secondaryLabel="Top nodes by memory"
+                  secondaryItems={metricsOverview.top_nodes_by_memory}
+                  tone="emerald"
+                />
+              </>
+            ) : (
+              <>
+                <MetricUnavailableCard
+                  title="CPU usage"
+                  body={metricsError || "Runtime CPU charts will appear here after the customer cluster exposes the Kubernetes Metrics API and the agent successfully ingests that data."}
+                />
+                <MetricUnavailableCard
+                  title="Memory usage"
+                  body="Memory panels remain intentionally honest. If Metrics Server is missing or the cluster has not sent runtime samples yet, ClusterSage keeps these panels in an unavailable state instead of fabricating values."
+                />
+              </>
+            )}
           </div>
         </section>
       </div>
