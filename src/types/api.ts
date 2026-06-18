@@ -14,7 +14,7 @@ export type ClusterMetricRollupItem = {
   label: string;
   namespace?: string | null;
   value: number;
-  unit: "mcores" | "bytes";
+  unit: string;
 };
 export type ClusterMetricsOverview = {
   collected_at?: string | null;
@@ -26,6 +26,55 @@ export type ClusterMetricsOverview = {
   top_pods_by_memory: ClusterMetricRollupItem[];
   top_nodes_by_cpu: ClusterMetricRollupItem[];
   top_nodes_by_memory: ClusterMetricRollupItem[];
+};
+export type ClusterMetricFilterCatalog = {
+  collected_at?: string | null;
+  metric_names: string[];
+  scopes: string[];
+  resource_kinds: string[];
+  namespaces: string[];
+  nodes: string[];
+  workloads: string[];
+  pods: string[];
+};
+export type ClusterMetricLatestBreakdownItem = {
+  scope: string;
+  resource_kind: string;
+  resource_name: string;
+  namespace?: string | null;
+  node_name?: string | null;
+  container_name?: string | null;
+  value: number;
+  unit: string;
+};
+export type ClusterMetricLatest = {
+  collected_at?: string | null;
+  metric_name: string;
+  unit?: string | null;
+  total_value: number;
+  breakdown: ClusterMetricLatestBreakdownItem[];
+};
+export type ClusterMetricTimeseriesPoint = {
+  timestamp: string;
+  value: number;
+};
+export type ClusterMetricTimeseriesSeries = {
+  scope: string;
+  resource_kind: string;
+  resource_name: string;
+  namespace?: string | null;
+  node_name?: string | null;
+  container_name?: string | null;
+  unit: string;
+  latest_value: number;
+  points: ClusterMetricTimeseriesPoint[];
+};
+export type ClusterMetricTimeseries = {
+  metric_name: string;
+  unit?: string | null;
+  window_minutes: number;
+  step_minutes: number;
+  series: ClusterMetricTimeseriesSeries[];
 };
 export type AlertLimitMetricType =
   | "resource_health"

@@ -27,14 +27,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     </aside>
     <div className="flex-1">
       <header className="surface-topbar border-b px-5 py-3 lg:px-8">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="eyebrow">ClusterSage console</p>
-            <h1 className="mt-1 text-lg font-semibold tracking-tight text-[var(--text)]">Workspace</h1>
-          </div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2 text-xs text-[var(--text-muted)] shadow-sm">
-            Setup stays separate from live cluster operations.
-          </div>
+        <div>
+          <p className="eyebrow">ClusterSage</p>
+          <h1 className="mt-1 text-lg font-semibold tracking-tight text-[var(--text)]">Workspace</h1>
         </div>
       </header>
       <main className="flex-1 p-5 lg:p-8">{children}</main>

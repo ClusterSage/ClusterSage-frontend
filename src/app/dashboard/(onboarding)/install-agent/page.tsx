@@ -8,7 +8,7 @@ import { CodeBlock } from "@/components/CodeBlock";
 
 const publicAgentImage = process.env.NEXT_PUBLIC_AGENT_IMAGE || "acrclustersage.azurecr.io/clustersage-agent:stable";
 const agentChart = process.env.NEXT_PUBLIC_AGENT_CHART || "oci://acrclustersage.azurecr.io/helm/clusterwatch-agent";
-const agentChartVersion = process.env.NEXT_PUBLIC_AGENT_CHART_VERSION || "0.1.2";
+const agentChartVersion = process.env.NEXT_PUBLIC_AGENT_CHART_VERSION || "0.1.3";
 const defaultAgentRepository = publicAgentImage.replace(/:[^/:]+$/, "");
 const defaultAgentTag = publicAgentImage.match(/:([^/:]+)$/)?.[1] || "stable";
 
@@ -57,7 +57,7 @@ export default function InstallAgentPage() {
   const pullCommands = `docker pull ${exactImage}\ncrictl pull ${exactImage}\nkubectl run clusterwatch-agent-pull-check \\\n  --rm -it \\\n  --restart=Never \\\n  --image=${exactImage} \\\n  --command -- python -c "print('public-pull-ok')"`;
 
   const values = useMemo(
-    () => `backend:\n  url: "${backendUrl}"\nauth:\n  email: "${user?.email || "you@example.com"}"\n  accessKey: "${accessKey || "cw_live_copy_generated_key_here"}"\ncluster:\n  name: "${clusterName}"\n  provider: "aks"\nagent:\n  image:\n    repository: "${imageRepo}"\n    tag: "${imageTag}"\n    pullPolicy: IfNotPresent\n  logLevel: "info"\n  heartbeatIntervalSeconds: 30\n  snapshotIntervalSeconds: 60\nfluentbit:\n  enabled: true\n  excludeAgentNamespace: true`,
+    () => `backend:\n  url: "${backendUrl}"\nauth:\n  email: "${user?.email || "you@example.com"}"\n  accessKey: "${accessKey || "cw_live_copy_generated_key_here"}"\ncluster:\n  name: "${clusterName}"\n  provider: "aks"\nagent:\n  image:\n    repository: "${imageRepo}"\n    tag: "${imageTag}"\n    pullPolicy: IfNotPresent\n  logLevel: "info"\n  heartbeatIntervalSeconds: 30\n  snapshotIntervalSeconds: 60\n  metrics:\n    enabled: true\n    intervalSeconds: 60\n    resourceUsage:\n      enabled: true\n    kubeStateMetrics:\n      enabled: true\n      url: ""\n      timeoutSeconds: 10\n    kubeletSummary:\n      enabled: true\naddons:\n  kubeStateMetrics:\n    enabled: true\n  metricsServer:\n    enabled: false\nfluentbit:\n  enabled: true\n  excludeAgentNamespace: true`,
     [backendUrl, user, accessKey, clusterName, imageRepo, imageTag],
   );
 

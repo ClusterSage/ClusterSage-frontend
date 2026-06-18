@@ -44,7 +44,6 @@ export default function ClustersPage() {
       <div>
         <p className="eyebrow">Connected environments</p>
         <h1 className="section-title mt-2">Clusters</h1>
-        <p className="section-copy mt-2">Open any cluster to review resources, incidents, limits, and suggestions.</p>
       </div>
       {error && <div className="card border-[var(--danger-bg)] text-[var(--danger-text)]">{error}</div>}
       {items === null && <div className="card">Loading clusters...</div>}
@@ -66,10 +65,7 @@ export default function ClustersPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold">{c.name}</h2>
-                <p className="text-sm muted">
-                  {c.provider}
-                  {c.last_seen_at ? ` - Last seen ${new Date(c.last_seen_at).toLocaleString()}` : ""}
-                </p>
+                <p className="text-sm muted">{c.provider}</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className={`${statusTone(c.status)} text-sm`}>{c.status}</span>
