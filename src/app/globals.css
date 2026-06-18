@@ -307,6 +307,59 @@ body {
     @apply text-left text-xs uppercase tracking-[0.2em];
   }
 
+  .dashboard-panel {
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0)),
+      var(--bg-elevated);
+    box-shadow: var(--shadow-sm);
+    @apply rounded-2xl p-5 transition-colors duration-200;
+  }
+
+  .dashboard-panel-title {
+    color: var(--text);
+    @apply text-lg font-semibold tracking-tight;
+  }
+
+  .dashboard-panel-subtitle {
+    color: var(--text-soft);
+    @apply mt-1 text-sm;
+  }
+
+  .dashboard-metric-card {
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+      var(--bg-elevated);
+    box-shadow: var(--shadow-sm);
+    @apply rounded-2xl p-5 transition-colors duration-200;
+  }
+
+  .dashboard-metric-icon {
+    border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    @apply grid h-12 w-12 shrink-0 place-items-center rounded-2xl;
+  }
+
+  .dashboard-metric-label {
+    color: var(--text-soft);
+    @apply text-sm font-medium;
+  }
+
+  .dashboard-shell-header {
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+      var(--bg-elevated);
+    box-shadow: var(--shadow-sm);
+    @apply rounded-2xl px-5 py-5 transition-colors duration-200;
+  }
+
+  .dashboard-shell-meta {
+    color: var(--text-soft);
+    @apply text-xs font-semibold uppercase tracking-[0.2em];
+  }
+
   .theme-transition {
     transition:
       background-color 180ms ease,

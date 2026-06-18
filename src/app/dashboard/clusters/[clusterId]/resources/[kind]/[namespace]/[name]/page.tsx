@@ -231,7 +231,7 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
   if (!resource) return <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-6 text-[var(--text-muted)]">Loading resource...</div>;
 
   return <div className="space-y-6 text-[var(--text)]">
-    <div>
+    <section className="dashboard-shell-header">
       <div className="flex flex-wrap items-center gap-3">
         <Link className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary)]" href={`/dashboard/clusters/${clusterId}/resources`}>Back to resources</Link>
         <Link className="text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)]" href={`/dashboard/clusters/${clusterId}/incidents`}>Cluster incidents</Link>
@@ -243,11 +243,13 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
         <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)]">{resource.status || "Unknown"}</span>
       </div>
       <h1 className="mt-2 break-words text-3xl font-bold text-[var(--text)]">{resource.name}</h1>
-      <p className="text-[var(--text-muted)]">Resource investigation workspace for logs, incidents, AI guidance, and remediation review.</p>
-    </div>
+      <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">Resource investigation workspace for logs, incidents, AI guidance, and remediation review.</p>
+    </section>
 
-    <div className="flex flex-wrap gap-2 rounded-3xl border border-[var(--border)] bg-[var(--bg-subtle)] p-2">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] p-2">
+      <div className="flex flex-wrap gap-2">
       {tabs.map((item) => <button key={item} className={`rounded-2xl px-4 py-2.5 text-sm font-medium transition ${tab === item ? "bg-[var(--bg-elevated)] text-[var(--primary)] shadow-sm ring-1 ring-[var(--primary-ring)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text)]"}`} onClick={() => setTab(item)}>{item}</button>)}
+      </div>
     </div>
 
     {tab === "Details" && <div className="space-y-4">

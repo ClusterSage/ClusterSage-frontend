@@ -208,26 +208,58 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
 
   if (view === "resources") {
     return (
-      <div className="space-y-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary)]">Cluster resources</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text)]">Resources</h1>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-5">
+        <section className="dashboard-shell-header">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <p className="dashboard-shell-meta">Cluster inventory</p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">Resources</h1>
+              <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">
+                Inspect the latest cluster snapshot, filter by kind, and drill into resource-specific logs, incidents, and AI guidance.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="dashboard-metric-card p-4">
+                <p className="dashboard-metric-label">Shown</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">{filteredResources.length}</p>
+                <p className="mt-2 text-xs text-[var(--text-soft)]">Current filtered rows</p>
+              </div>
+              <div className="dashboard-metric-card p-4">
+                <p className="dashboard-metric-label">Kinds</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">{kinds.length - 1}</p>
+                <p className="mt-2 text-xs text-[var(--text-soft)]">Visible resource kinds</p>
+              </div>
+              <div className="dashboard-metric-card p-4">
+                <p className="dashboard-metric-label">Cluster</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">{cluster.name}</p>
+                <p className="mt-2 text-xs text-[var(--text-soft)]">{cluster.provider}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="dashboard-panel">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="dashboard-panel-title">Filters</h2>
+              <p className="dashboard-panel-subtitle">Focus the inventory before you drill deeper.</p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <select className="input border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] sm:w-44" value={kind} onChange={(event) => setKind(event.target.value)}>
             {kinds.map((item) => (
               <option key={item}>{item}</option>
             ))}
           </select>
           <input className="input border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] sm:w-72" placeholder="Search resources" value={query} onChange={(event) => setQuery(event.target.value)} />
-        </div>
+          </div>
+        </section>
         {filteredResources.length === 0 && (
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-[var(--text-muted)]">
+          <div className="dashboard-panel text-[var(--text-muted)]">
             <h2 className="font-semibold text-[var(--text)]">No resources found</h2>
             <p className="mt-2">Resources will appear here after the cluster connects.</p>
           </div>
         )}
-        <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-[var(--border)] text-sm text-[var(--text)]">
               <thead className="bg-[var(--bg-subtle)] text-left text-xs uppercase tracking-wide text-[var(--text-soft)]">
@@ -267,26 +299,37 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
 
   if (view === "incidents") {
     return (
-      <div className="space-y-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary)]">Cluster incident review</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text)]">Incidents</h1>
-        </div>
+      <div className="space-y-5">
+        <section className="dashboard-shell-header">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <p className="dashboard-shell-meta">Cluster incident review</p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">Incidents</h1>
+              <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">
+                Review issue activity across the cluster, then open the detail drawer to inspect evidence and the linked resource context.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button className="btn-secondary h-10 rounded-xl px-4" onClick={() => void refreshIncidents()} disabled={incidentLoading}>{incidentLoading ? "Refreshing..." : "Refresh"}</button>
+            </div>
+          </div>
+        </section>
         <div className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"><p className="text-sm text-[var(--text-muted)]">Critical</p><p className="mt-2 text-2xl font-bold text-red-400">{incidentSummary.critical}</p></div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"><p className="text-sm text-[var(--text-muted)]">Major</p><p className="mt-2 text-2xl font-bold text-amber-400">{incidentSummary.major}</p></div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"><p className="text-sm text-[var(--text-muted)]">Minor</p><p className="mt-2 text-2xl font-bold text-[var(--primary)]">{incidentSummary.minor}</p></div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"><p className="text-sm text-[var(--text-muted)]">Open incidents</p><p className="mt-2 text-2xl font-bold text-[var(--text)]">{incidentSummary.open}</p></div>
+          <div className="dashboard-metric-card p-4"><p className="dashboard-metric-label">Critical</p><p className="mt-2 text-2xl font-semibold text-red-400">{incidentSummary.critical}</p></div>
+          <div className="dashboard-metric-card p-4"><p className="dashboard-metric-label">Major</p><p className="mt-2 text-2xl font-semibold text-amber-400">{incidentSummary.major}</p></div>
+          <div className="dashboard-metric-card p-4"><p className="dashboard-metric-label">Minor</p><p className="mt-2 text-2xl font-semibold text-[var(--primary)]">{incidentSummary.minor}</p></div>
+          <div className="dashboard-metric-card p-4"><p className="dashboard-metric-label">Open</p><p className="mt-2 text-2xl font-semibold text-[var(--text)]">{incidentSummary.open}</p></div>
         </div>
-        <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
+        <section className="dashboard-panel">
+          <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
           <input className="input border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] lg:min-w-72" placeholder="Search incidents" value={incidentSearch} onChange={(event) => setIncidentSearch(event.target.value)} />
           <select className="input border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] lg:w-40" value={incidentSeverity} onChange={(event) => setIncidentSeverity(event.target.value)}><option value="all">All severities</option><option value="critical">Critical</option><option value="major">Major</option><option value="minor">Minor</option></select>
           <select className="input border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] lg:w-40" value={incidentStatus} onChange={(event) => setIncidentStatus(event.target.value)}><option value="all">All status</option><option value="open">Open</option><option value="acknowledged">Acknowledged</option><option value="resolved">Resolved</option><option value="ignored">Ignored</option></select>
           <select className="input border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] lg:w-48" value={incidentNamespace} onChange={(event) => setIncidentNamespace(event.target.value)}>{incidentNamespaces.map((item) => <option key={item} value={item}>{item === "all" ? "All namespaces" : item}</option>)}</select>
           <select className="input border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] lg:w-48" value={incidentType} onChange={(event) => setIncidentType(event.target.value)}>{incidentTypes.map((item) => <option key={item} value={item}>{item === "all" ? "All incident types" : item}</option>)}</select>
           <select className="input border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] lg:w-52" value={incidentWorkload} onChange={(event) => setIncidentWorkload(event.target.value)}>{incidentWorkloads.map((item) => <option key={item} value={item}>{item === "all" ? "All workloads" : item}</option>)}</select>
-          <button className="btn-secondary" onClick={() => void refreshIncidents()} disabled={incidentLoading}>{incidentLoading ? "Refreshing..." : "Refresh"}</button>
-        </div>
+          </div>
+        </section>
         {incidentError && <div className="rounded-2xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-[var(--danger-text)]">{incidentError}</div>}
         {incidentLoading && <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-[var(--text-muted)]">Loading incidents...</div>}
         {!incidentLoading && incidents?.length === 0 && <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-[var(--text-muted)]"><h2 className="text-lg font-semibold text-[var(--text)]">No incidents detected for this cluster.</h2><p className="mt-2">Recent cluster issues will appear here.</p></div>}
@@ -378,21 +421,21 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5">
-        <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary)]">Cluster investigation</p>
-        <h1 className="mt-1 text-2xl font-bold text-[var(--text)]">ClusterSage AI</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">Ask questions about this cluster and review the results here.</p>
-      </div>
+    <div className="space-y-5">
+      <section className="dashboard-shell-header">
+        <p className="dashboard-shell-meta">Cluster investigation</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">ClusterSage AI</h1>
+        <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">Ask questions about this cluster and review grounded answers built from its existing incidents, resources, logs, and event summaries.</p>
+      </section>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {supportedClusterIntents.map((item) => (
-          <div key={item} className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+          <div key={item} className="dashboard-metric-card p-4">
             <p className="text-sm font-medium text-[var(--text)]">{item}</p>
             <p className="mt-2 text-xs text-[var(--text-soft)]">Answers are grounded in the incidents, resources, logs, and event summaries already collected for this cluster.</p>
           </div>
         ))}
       </div>
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5">
+      <div className="dashboard-panel">
         <textarea className="input min-h-28 w-full border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" value={clusterQuestion} onChange={(event) => setClusterQuestion(event.target.value)} placeholder="Ask about cluster incidents, restarts, logs, or warning events" />
         <div className="mt-3 flex flex-wrap gap-2">
           {exampleQuestions.map((item) => <button key={item} className="btn-secondary" onClick={() => setClusterQuestion(item)}>{item}</button>)}

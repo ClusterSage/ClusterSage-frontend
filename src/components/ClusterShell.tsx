@@ -39,15 +39,13 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
           <BrandLogo textClassName="text-lg" />
         </Link>
         <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 shadow-[var(--shadow-sm)]">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Cluster</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Current cluster</p>
               <h2 className="mt-2 truncate text-base font-semibold text-[var(--text)]">{cluster?.name || "Loading cluster..."}</h2>
               <p className="mt-1 text-xs text-[var(--text-soft)]">{cluster?.provider || "Cluster"}</p>
             </div>
-            <span className={statusTone}>
-              {cluster?.status || "loading"}
-            </span>
+            <span className={statusTone}>{cluster?.status || "loading"}</span>
           </div>
           {error && <p className="mt-3 text-sm text-[var(--danger-text)]">{error}</p>}
         </div>
@@ -65,7 +63,7 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
                     : "text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]"
                 }`}
               >
-                <span className="text-xs font-semibold uppercase tracking-[0.16em]">{item.label}</span>
+                <span>{item.label}</span>
               </Link>
             );
           })}
@@ -76,14 +74,23 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
       </aside>
       <div className="flex-1">
         <header className="surface-topbar border-b px-5 py-3 lg:px-8">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <Link href="/dashboard" className="btn-ghost px-2 py-1.5 text-xs">
+              <Link href="/dashboard/clusters" className="btn-ghost px-2 py-1.5 text-xs">
                 Back
               </Link>
               <div className="min-w-0">
+                <p className="dashboard-shell-meta">Cluster operations</p>
                 <p className="truncate text-sm font-medium text-[var(--text)]">{cluster?.name || "Cluster"}</p>
-                <p className="text-xs text-[var(--text-soft)]">{cluster?.provider || "Cluster"}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[var(--text-soft)]">
+              <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1">{cluster?.provider || "Cluster"}</span>
+              <span className={statusTone}>
+                {cluster?.status || "loading"}
+              </span>
+              <div className="lg:hidden">
+                <ThemeToggle compact />
               </div>
             </div>
           </div>

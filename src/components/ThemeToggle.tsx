@@ -10,7 +10,7 @@ function applyTheme(theme: Theme) {
   document.documentElement.setAttribute("data-theme", theme);
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [theme, setTheme] = useState<Theme>("light");
   const [ready, setReady] = useState(false);
 
@@ -33,7 +33,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="btn-secondary h-11 w-11 rounded-2xl p-0"
+      className={compact ? "btn-secondary h-9 w-9 rounded-xl p-0" : "btn-secondary h-11 w-11 rounded-2xl p-0"}
       onClick={toggle}
       aria-label={ready ? `Switch to ${theme === "dark" ? "light" : "dark"} mode` : "Toggle theme"}
       title={ready ? `Switch to ${theme === "dark" ? "light" : "dark"} mode` : "Toggle theme"}

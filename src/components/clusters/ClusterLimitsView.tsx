@@ -412,11 +412,12 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
 
   return (
     <div className="space-y-6 text-[var(--text)]">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <section className="dashboard-shell-header">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary)]">Cluster alerting</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text)]">Limits</h1>
-          <p className="mt-2 max-w-3xl text-sm text-[var(--text-muted)]">
+          <p className="dashboard-shell-meta">Cluster alerting</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">Limits</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--text-muted)]">
             Manage alert thresholds for the signals available in this workspace.
           </p>
         </div>
@@ -428,7 +429,8 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
             Add alert limit
           </button>
         </div>
-      </div>
+        </div>
+      </section>
 
       {notice && <div className="rounded-3xl border border-[var(--primary-ring)] bg-[var(--primary-soft)] p-4 text-[var(--primary)]">{notice}</div>}
       {error && <div className="rounded-3xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-[var(--danger-text)]">{error}</div>}
