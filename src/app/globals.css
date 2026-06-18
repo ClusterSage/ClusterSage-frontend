@@ -83,8 +83,8 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(56, 139, 253, 0.12), transparent 26%),
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 24%),
+    radial-gradient(circle at top left, rgba(56, 139, 253, 0.07), transparent 24%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 20%),
     var(--bg);
   color: var(--text);
   text-rendering: optimizeLegibility;
@@ -134,26 +134,26 @@ body {
     background: var(--bg-elevated);
     box-shadow: var(--shadow-sm);
     color: var(--text);
-    @apply rounded-3xl p-6 transition-colors duration-200;
+    @apply rounded-2xl p-6 transition-colors duration-200;
   }
 
   .panel {
     border: 1px solid var(--border);
     background: var(--bg-elevated);
     box-shadow: var(--shadow-sm);
-    @apply rounded-3xl transition-colors duration-200;
+    @apply rounded-2xl transition-colors duration-200;
   }
 
   .panel-subtle {
     border: 1px solid var(--border);
     background: var(--bg-subtle);
-    @apply rounded-3xl transition-colors duration-200;
+    @apply rounded-2xl transition-colors duration-200;
   }
 
   .panel-strong {
     border: 1px solid var(--border-strong);
     background: var(--bg-strong);
-    @apply rounded-3xl transition-colors duration-200;
+    @apply rounded-2xl transition-colors duration-200;
   }
 
   .surface-sidebar {
@@ -298,7 +298,7 @@ body {
     border: 1px solid var(--border);
     background: var(--bg-elevated);
     box-shadow: var(--shadow-sm);
-    @apply overflow-hidden rounded-3xl;
+    @apply overflow-hidden rounded-2xl;
   }
 
   .table-header {
