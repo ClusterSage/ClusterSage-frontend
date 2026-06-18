@@ -7,8 +7,8 @@ import type { AgentKey, User } from "@/types/api";
 import { CodeBlock } from "@/components/CodeBlock";
 
 const publicAgentImage = process.env.NEXT_PUBLIC_AGENT_IMAGE || "acrclustersage.azurecr.io/clustersage-agent:stable";
-const agentChart = process.env.NEXT_PUBLIC_AGENT_CHART || "oci://acrclustersage.azurecr.io/clusterwatch-agent";
-const agentChartVersion = process.env.NEXT_PUBLIC_AGENT_CHART_VERSION || "0.1.1";
+const agentChart = process.env.NEXT_PUBLIC_AGENT_CHART || "oci://acrclustersage.azurecr.io/helm/clusterwatch-agent";
+const agentChartVersion = process.env.NEXT_PUBLIC_AGENT_CHART_VERSION || "0.1.2";
 const defaultAgentRepository = publicAgentImage.replace(/:[^/:]+$/, "");
 const defaultAgentTag = publicAgentImage.match(/:([^/:]+)$/)?.[1] || "stable";
 
