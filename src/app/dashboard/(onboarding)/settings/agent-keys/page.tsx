@@ -37,18 +37,21 @@ export default function AgentKeysPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Agent keys</h1>
-        <p className="text-slate-600">Keys are shown once, then stored only as hashes.</p>
+        <p className="eyebrow">Agent access</p>
+        <h1 className="section-title mt-2">Agent keys</h1>
+        <p className="section-copy mt-2">
+          Keys are shown once, then stored only as hashes. Use them to bootstrap cluster installs without re-exposing the raw value later.
+        </p>
       </div>
       <form onSubmit={submit} className="card flex gap-3">
         <input className="input" name="name" placeholder="Production AKS agent" />
         <button className="btn">Generate key</button>
       </form>
-      {error && <div className="card border-red-200 text-red-700">{error}</div>}
+      {error && <div className="card border-[var(--danger-bg)] text-[var(--danger-text)]">{error}</div>}
       {raw && (
-        <div className="card border-green-200">
-          <h2 className="font-bold text-green-700">Copy this key now</h2>
-          <p className="mb-3 mt-1 text-sm text-slate-600">The raw access key will not be shown again.</p>
+        <div className="card border-[var(--success-bg)]">
+          <h2 className="text-xl font-semibold text-[var(--success-text)]">Copy this key now</h2>
+          <p className="mb-3 mt-1 text-sm muted">The raw access key will not be shown again.</p>
           <CodeBlock value={raw} />
         </div>
       )}
@@ -57,7 +60,7 @@ export default function AgentKeysPage() {
           <div className="card flex items-center justify-between" key={k.id}>
             <div>
               <p className="font-semibold">{k.name}</p>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm muted">
                 last4: {k.key_last4} · created {new Date(k.created_at).toLocaleString()} {k.revoked_at ? "· revoked" : ""}
               </p>
             </div>

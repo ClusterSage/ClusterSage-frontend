@@ -2,24 +2,42 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { clearToken } from "@/lib/api";
 const nav = [["/dashboard", "Overview"], ["/dashboard/clusters", "Clusters"], ["/dashboard/install-agent", "Install Agent"], ["/dashboard/settings/agent-keys", "Agent Keys"], ["/dashboard/settings", "Settings"]];
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  return <div className="min-h-screen bg-slate-50 lg:flex">
-    <aside className="border-r border-slate-200 bg-white/95 p-5 lg:sticky lg:top-0 lg:h-screen lg:w-72">
-      <Link href="/dashboard" className="block rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100">
+  return <div className="min-h-screen lg:flex">
+    <aside className="surface-sidebar border-r p-5 lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:p-6">
+      <Link href="/dashboard" className="block rounded-2xl">
         <BrandLogo textClassName="text-xl" />
       </Link>
-      <nav className="mt-8 space-y-1">
+      <p className="mt-6 section-copy">Operations workspace for cluster inventory, agent installation, and organization access.</p>
+      <nav className="mt-8 space-y-1.5">
         {nav.map(([href,label]) => {
           const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-          return <Link key={href} href={href} className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${active ? "bg-blue-50 text-blue-700 shadow-sm" : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"}`}>{label}</Link>;
+          return <Link key={href} href={href} className={`block rounded-2xl px-4 py-3 text-sm font-semibold transition ${active ? "bg-[var(--primary-soft)] text-[var(--primary)] shadow-sm" : "text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]"}`}>{label}</Link>;
         })}
       </nav>
-      <button className="btn-secondary mt-8 w-full" onClick={() => { clearToken(); router.push("/login"); }}>Logout</button>
+      <div className="mt-8 flex items-center gap-3">
+        <ThemeToggle />
+        <button className="btn-secondary flex-1" onClick={() => { clearToken(); router.push("/login"); }}>Log out</button>
+      </div>
     </aside>
-    <main className="flex-1 p-6 lg:p-10">{children}</main>
+    <div className="flex-1">
+      <header className="surface-topbar border-b px-6 py-4 lg:px-10">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="eyebrow">ClusterSage console</p>
+            <h1 className="mt-2 text-xl font-semibold tracking-tight text-[var(--text)]">Operational visibility for connected clusters</h1>
+          </div>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-sm text-[var(--text-muted)] shadow-sm">
+            Private-cluster onboarding stays separated from cluster investigations.
+          </div>
+        </div>
+      </header>
+      <main className="flex-1 p-6 lg:p-10">{children}</main>
+    </div>
   </div>;
 }

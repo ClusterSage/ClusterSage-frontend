@@ -1,4 +1,30 @@
 import "./globals.css";
 import type { Metadata } from "next";
-export const metadata: Metadata = { title: "ClusterSage", description: "Kubernetes observability SaaS" };
-export default function RootLayout({ children }: { children: React.ReactNode }) { return <html lang="en"><body>{children}</body></html>; }
+
+export const metadata: Metadata = {
+  title: "ClusterSage",
+  description: "Operational visibility for Kubernetes clusters, incidents, and guided remediation.",
+};
+
+const themeInitScript = `
+  (function () {
+    try {
+      var key = 'clustersage-theme';
+      var stored = window.localStorage.getItem(key);
+      var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      var theme = stored === 'dark' || stored === 'light' ? stored : preferred;
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (error) {}
+  })();
+`;
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className="theme-transition antialiased">
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {children}
+      </body>
+    </html>
+  );
+}

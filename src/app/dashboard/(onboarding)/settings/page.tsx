@@ -13,12 +13,15 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-3xl font-bold">Settings</h1>
+      <div>
+        <p className="eyebrow">Workspace settings</p>
+        <h1 className="section-title mt-2">Settings</h1>
+      </div>
       <div className="card">
-        <h2 className="font-bold">Account</h2>
-        <p className="mt-2 text-slate-600">Email: {user?.email || "Loading..."}</p>
-        <p className="text-slate-600">Role: {user?.role || ""}</p>
-        <p className="text-slate-600">Organization ID: {user?.organization_id || ""}</p>
+        <h2 className="text-xl font-semibold">Account</h2>
+        <p className="mt-3 text-sm muted">Email: {user?.email || "Loading..."}</p>
+        <p className="text-sm muted">Role: {user?.role || ""}</p>
+        <p className="text-sm muted">Organization ID: {user?.organization_id || ""}</p>
       </div>
     </div>
   );

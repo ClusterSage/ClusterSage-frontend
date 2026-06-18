@@ -16,15 +16,16 @@ export default function ClustersPage() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Connected environments</p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight">Clusters</h1>
+        <p className="eyebrow">Connected environments</p>
+        <h1 className="section-title mt-2">Clusters</h1>
+        <p className="section-copy mt-2">Open any cluster to move into the dedicated operations workspace for resources, incidents, limits, and AI review.</p>
       </div>
-      {error && <div className="card border-red-200 text-red-700">{error}</div>}
+      {error && <div className="card border-[var(--danger-bg)] text-[var(--danger-text)]">{error}</div>}
       {items === null && <div className="card">Loading clusters...</div>}
       {items?.length === 0 && (
         <div className="card">
-          <h2 className="font-semibold">No clusters connected</h2>
-          <p className="mt-2 text-slate-600">Install the agent to register a private AKS or Kubernetes cluster.</p>
+          <h2 className="text-xl font-semibold">No clusters connected</h2>
+          <p className="mt-2 section-copy">Install the agent to register a private AKS or Kubernetes cluster with this workspace.</p>
         </div>
       )}
       <div className="grid gap-4">
@@ -32,16 +33,16 @@ export default function ClustersPage() {
           <Link
             key={c.id}
             href={`/dashboard/clusters/${c.id}/dashboard`}
-            className="card block transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
+            className="card block transition hover:-translate-y-0.5 hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-md)]"
           >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="font-bold">{c.name}</h2>
-                <p className="text-sm text-slate-600">
+                <h2 className="text-lg font-semibold">{c.name}</h2>
+                <p className="text-sm muted">
                   {c.provider} / agent {c.agent_version || "unknown"}
                 </p>
               </div>
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">{c.status}</span>
+              <span className="status-chip status-chip-info text-sm">{c.status}</span>
             </div>
           </Link>
         ))}

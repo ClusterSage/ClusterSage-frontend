@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import type { Cluster } from "@/types/api";
 import { BrandLogo } from "@/components/BrandLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const nav = [
   { href: "dashboard", label: "Dashboard" },
@@ -26,32 +27,32 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
 
   const statusTone = useMemo(() => {
     const status = (cluster?.status || "").toLowerCase();
-    if (status === "connected" || status === "healthy") return "bg-emerald-50 text-emerald-700";
-    if (status === "pending") return "bg-amber-50 text-amber-700";
-    return "bg-slate-100 text-slate-700";
+    if (status === "connected" || status === "healthy") return "status-chip status-chip-success";
+    if (status === "pending") return "status-chip status-chip-warning";
+    return "status-chip status-chip-muted";
   }, [cluster?.status]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 lg:flex">
-      <aside className="border-r border-slate-800 bg-slate-900/95 p-5 lg:sticky lg:top-0 lg:h-screen lg:w-72">
-        <Link href="/dashboard" className="block rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200/30">
-          <BrandLogo markClassName="bg-white text-blue-700 shadow-none" textClassName="text-xl text-white" />
+    <div className="min-h-screen lg:flex">
+      <aside className="surface-sidebar border-r p-5 lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:p-6">
+        <Link href="/dashboard" className="block rounded-2xl">
+          <BrandLogo textClassName="text-xl" />
         </Link>
-        <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-300">Selected cluster</p>
-          <h2 className="mt-2 break-words text-lg font-semibold text-white">{cluster?.name || "Loading cluster..."}</h2>
-          <p className="mt-1 text-sm text-slate-400">{cluster?.provider || "Kubernetes cluster"}</p>
+        <div className="panel mt-6 p-4">
+          <p className="eyebrow">Selected cluster</p>
+          <h2 className="mt-3 break-words text-lg font-semibold text-[var(--text)]">{cluster?.name || "Loading cluster..."}</h2>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">{cluster?.provider || "Kubernetes cluster"}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${statusTone}`}>
+            <span className={statusTone}>
               {cluster?.status || "loading"}
             </span>
             {cluster?.last_seen_at && (
-              <span className="text-xs text-slate-400">Last seen {new Date(cluster.last_seen_at).toLocaleString()}</span>
+              <span className="text-xs text-[var(--text-soft)]">Last seen {new Date(cluster.last_seen_at).toLocaleString()}</span>
             )}
           </div>
-          {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+          {error && <p className="mt-3 text-sm text-[var(--danger-text)]">{error}</p>}
         </div>
-        <nav className="mt-8 space-y-1">
+        <nav className="mt-8 space-y-1.5">
           {nav.map((item) => {
             const href = `/dashboard/clusters/${clusterId}/${item.href}`;
             const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -61,8 +62,8 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
                 href={href}
                 className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   active
-                    ? "bg-blue-500/15 text-blue-200 shadow-sm ring-1 ring-blue-400/20"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    ? "bg-[var(--primary-soft)] text-[var(--primary)] shadow-sm ring-1 ring-[var(--primary-ring)]"
+                    : "text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]"
                 }`}
               >
                 {item.label}
@@ -70,17 +71,23 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
             );
           })}
         </nav>
+        <div className="mt-8 flex items-center gap-3">
+          <ThemeToggle />
+          <div className="panel-subtle flex-1 px-3 py-2 text-sm text-[var(--text-muted)]">
+            Investigate incidents, limits, and AI guidance without leaving cluster context.
+          </div>
+        </div>
       </aside>
       <div className="flex-1">
-        <header className="border-b border-slate-800 bg-slate-900/80 px-6 py-4 backdrop-blur lg:px-10">
+        <header className="surface-topbar border-b px-6 py-4 lg:px-10">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <Link href="/dashboard" className="text-sm font-medium text-blue-300 hover:text-blue-200">
+              <Link href="/dashboard" className="text-sm font-medium text-[var(--primary)] hover:opacity-80">
                 Back to Onboarding
               </Link>
-              <p className="mt-1 text-sm text-slate-400">Cluster operations workspace</p>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">Cluster operations workspace</p>
             </div>
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-[var(--text-muted)]">
               {cluster?.name ? `Working in ${cluster.name}` : "Loading cluster context..."}
             </div>
           </div>
