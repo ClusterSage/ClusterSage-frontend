@@ -42,7 +42,7 @@ export default function InstallAgentPage() {
 
   const values = useMemo(
     () => `backend:\n  url: "${backendUrl}"\nauth:\n  email: "${user?.email || "you@example.com"}"\n  accessKey: "${accessKey || "cw_live_copy_generated_key_here"}"\ncluster:\n  name: "${clusterName}"\n  provider: "aks"\nagent:\n  image:\n    repository: "${imageRepo}"\n    tag: "${imageTag}"\n    pullPolicy: IfNotPresent\n  logLevel: "info"\n  heartbeatIntervalSeconds: 30\n  snapshotIntervalSeconds: 60\nfluentbit:\n  enabled: true\n  excludeAgentNamespace: true`,
-    [backendUrl, user, accessKey, clusterName, imageRepo, imageTag]
+    [backendUrl, user, accessKey, clusterName, imageRepo, imageTag],
   );
 
   const install = `helm upgrade --install clusterwatch-agent ${agentChart} \\\n  --version ${agentChartVersion} \\\n  --namespace clusterwatch-agent \\\n  --create-namespace \\\n  -f clusterwatch-values.yaml`;
@@ -59,9 +59,7 @@ export default function InstallAgentPage() {
 
       <div className="card space-y-3 border-blue-200 bg-blue-50/40">
         <h2 className="font-bold">Public agent image</h2>
-        <p className="text-sm text-slate-700">
-          This image is publicly pullable without Docker login or Kubernetes image pull secrets.
-        </p>
+        <p className="text-sm text-slate-700">This image is publicly pullable without Docker login or Kubernetes image pull secrets.</p>
         <CodeBlock value={exactImage} />
         <CodeBlock value={pullCommands} />
       </div>
@@ -75,7 +73,11 @@ export default function InstallAgentPage() {
           <button className="btn md:col-span-4">Generate one-time key</button>
         </form>
         <p className="text-sm text-slate-600">
-          The default image is <code>{exactImage}</code>. Already have a key? Paste it into the values.yaml block before installing. Manage keys in <Link className="text-blue-700" href="/dashboard/settings/agent-keys">Agent Keys</Link>.
+          The default image is <code>{exactImage}</code>. Already have a key? Paste it into the values.yaml block before installing. Manage keys in{" "}
+          <Link className="text-blue-700" href="/dashboard/settings/agent-keys">
+            Agent Keys
+          </Link>
+          .
         </p>
         {accessKey && <CodeBlock value={accessKey} />}
       </div>
@@ -83,9 +85,7 @@ export default function InstallAgentPage() {
       <div className="card space-y-3">
         <h2 className="font-bold">2. Add Helm repository or use local chart</h2>
         <CodeBlock value={`helm show chart ${agentChart} --version ${agentChartVersion}`} />
-        <p className="text-sm text-slate-600">
-          The agent chart is published as an OCI Helm chart. No repository add step is required.
-        </p>
+        <p className="text-sm text-slate-600">The agent chart is published as an OCI Helm chart. No repository add step is required.</p>
       </div>
 
       <div className="card space-y-3">

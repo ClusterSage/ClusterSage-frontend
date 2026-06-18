@@ -10,3 +10,64 @@ export type ResourceAISuggestion = { id: string; cluster_id: string; incident_id
 export type RemediationApprovalResult = { suggestion_id: string; approval_id: string; approval_status: string; action_id?: string | null; action_status?: string | null; message: string };
 export type RemediationAction = { id: string; cluster_id: string; suggestion_id: string; approval_id: string; action_type: string; action_payload: Record<string, unknown>; status: string; requested_by_user_id?: string | null; picked_up_by_agent_id?: string | null; requested_at: string; picked_up_at?: string | null; completed_at?: string | null; error_message?: string | null; result?: Record<string, unknown> | null };
 export type AIClusterQuery = { id: string; cluster_id: string; user_id?: string | null; question: string; parsed_query?: Record<string, unknown> | null; answer_summary?: string | null; result?: Record<string, unknown> | null; ai_model?: string | null; created_at: string };
+export type AlertLimitMetricType =
+  | "resource_health"
+  | "pod_restarts"
+  | "open_incidents"
+  | "critical_incidents"
+  | "major_incidents"
+  | "minor_incidents"
+  | "warning_events";
+export type AlertLimitScopeType = "cluster" | "namespace" | "workload" | "resource";
+export type AlertLimitOperator = "gt" | "gte" | "lt" | "lte" | "eq";
+export type AlertLimitSeverity = "minor" | "major" | "critical";
+export type AlertLimit = {
+  id: string;
+  cluster_id: string;
+  created_by_user_id?: string | null;
+  name: string;
+  metric_type: AlertLimitMetricType;
+  scope_type: AlertLimitScopeType;
+  namespace?: string | null;
+  workload_name?: string | null;
+  resource_id?: string | null;
+  operator: AlertLimitOperator;
+  threshold_value: number;
+  time_window_minutes: number;
+  severity: AlertLimitSeverity;
+  email_enabled: boolean;
+  notification_email?: string | null;
+  enabled: boolean;
+  cooldown_minutes: number;
+  last_triggered_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+export type AlertEvent = {
+  id: string;
+  cluster_id: string;
+  alert_limit_id: string;
+  metric_value?: number | null;
+  threshold_value: number;
+  triggered_at: string;
+  notification_sent: boolean;
+  notification_error?: string | null;
+  created_at: string;
+};
+export type AlertLimitCreateRequest = {
+  name: string;
+  metric_type: AlertLimitMetricType;
+  scope_type: AlertLimitScopeType;
+  namespace?: string | null;
+  workload_name?: string | null;
+  resource_id?: string | null;
+  operator: AlertLimitOperator;
+  threshold_value: number;
+  time_window_minutes: number;
+  severity: AlertLimitSeverity;
+  email_enabled: boolean;
+  notification_email?: string | null;
+  enabled: boolean;
+  cooldown_minutes: number;
+};
+export type AlertLimitUpdateRequest = Partial<AlertLimitCreateRequest>;

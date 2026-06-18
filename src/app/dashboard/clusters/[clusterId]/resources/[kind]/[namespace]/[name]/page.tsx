@@ -26,20 +26,20 @@ function stringList(value: unknown): string {
 
 function labels(labels: Record<string, string>) {
   const entries = Object.entries(labels || {});
-  if (!entries.length) return <p className="text-sm text-slate-500">No labels available.</p>;
-  return <div className="flex flex-wrap gap-2">{entries.slice(0, 20).map(([key, value]) => <span key={key} className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700">{key}: {value}</span>)}</div>;
+  if (!entries.length) return <p className="text-sm text-slate-400">No labels available.</p>;
+  return <div className="flex flex-wrap gap-2">{entries.slice(0, 20).map(([key, value]) => <span key={key} className="rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-200">{key}: {value}</span>)}</div>;
 }
 
 function severityTone(severity: string) {
-  if (severity === "critical") return "bg-red-50 text-red-700";
-  if (severity === "major") return "bg-amber-50 text-amber-700";
-  return "bg-blue-50 text-blue-700";
+  if (severity === "critical") return "bg-red-500/15 text-red-200";
+  if (severity === "major") return "bg-amber-500/15 text-amber-100";
+  return "bg-blue-500/15 text-blue-200";
 }
 
 function riskTone(risk: string) {
-  if (risk === "high") return "bg-red-50 text-red-700";
-  if (risk === "medium") return "bg-amber-50 text-amber-700";
-  return "bg-emerald-50 text-emerald-700";
+  if (risk === "high") return "bg-red-500/15 text-red-200";
+  if (risk === "medium") return "bg-amber-500/15 text-amber-100";
+  return "bg-emerald-500/15 text-emerald-200";
 }
 
 function evidenceLines(evidence: Record<string, unknown>): { timestamp?: string | null; container?: string | null; message: string }[] {
@@ -227,51 +227,60 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
     }
   }
 
-  if (error) return <div className="card border-red-200 text-red-700">{error}</div>;
-  if (!resource) return <div className="card">Loading resource...</div>;
+  if (error) return <div className="rounded-lg border border-red-900 bg-red-950/40 p-4 text-red-300">{error}</div>;
+  if (!resource) return <div className="rounded-lg border border-slate-800 bg-slate-900 p-6 text-slate-300">Loading resource...</div>;
 
-  return <div className="space-y-6">
+  return <div className="space-y-6 text-slate-100">
     <div>
-      <Link className="text-sm text-blue-700 hover:underline" href={`/dashboard/clusters/${clusterId}`}>Back to resources</Link>
-      <h1 className="mt-2 break-words text-3xl font-bold">{resource.name}</h1>
-      <p className="text-slate-600">{resource.kind} / {resource.namespace || "cluster"} / {resource.status || "Unknown"}</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link className="text-sm font-medium text-blue-300 hover:text-blue-200" href={`/dashboard/clusters/${clusterId}/resources`}>Back to resources</Link>
+        <Link className="text-sm font-medium text-slate-400 hover:text-white" href={`/dashboard/clusters/${clusterId}/incidents`}>Cluster incidents</Link>
+        <Link className="text-sm font-medium text-slate-400 hover:text-white" href={`/dashboard/clusters/${clusterId}/ai`}>ClusterSage AI</Link>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{resource.kind}</span>
+        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{resource.namespace || "cluster"}</span>
+        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{resource.status || "Unknown"}</span>
+      </div>
+      <h1 className="mt-2 break-words text-3xl font-bold text-white">{resource.name}</h1>
+      <p className="text-slate-400">Resource investigation workspace for logs, incidents, AI guidance, and remediation review.</p>
     </div>
 
-    <div className="flex flex-wrap gap-2 border-b border-slate-200">
-      {tabs.map((item) => <button key={item} className={`px-4 py-3 text-sm font-medium ${tab === item ? "border-b-2 border-blue-600 text-blue-700" : "text-slate-600 hover:text-slate-900"}`} onClick={() => setTab(item)}>{item}</button>)}
+    <div className="flex flex-wrap gap-2 border-b border-slate-800">
+      {tabs.map((item) => <button key={item} className={`px-4 py-3 text-sm font-medium ${tab === item ? "border-b-2 border-blue-400 text-blue-200" : "text-slate-400 hover:text-white"}`} onClick={() => setTab(item)}>{item}</button>)}
     </div>
 
     {tab === "Details" && <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="card"><p className="text-sm text-slate-500">Name</p><p className="mt-2 break-words font-medium">{resource.name}</p></div>
-        <div className="card"><p className="text-sm text-slate-500">Namespace</p><p className="mt-2 font-medium">{resource.namespace || "cluster"}</p></div>
-        <div className="card"><p className="text-sm text-slate-500">Status</p><p className="mt-2 font-medium">{resource.status || "Unknown"}</p></div>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><p className="text-sm text-slate-400">Name</p><p className="mt-2 break-words font-medium text-white">{resource.name}</p></div>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><p className="text-sm text-slate-400">Namespace</p><p className="mt-2 font-medium text-white">{resource.namespace || "cluster"}</p></div>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><p className="text-sm text-slate-400">Status</p><p className="mt-2 font-medium text-white">{resource.status || "Unknown"}</p></div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="card space-y-3">
-          <h2 className="font-semibold">Metadata</h2>
-          <p className="text-sm text-slate-600">Created: {resource.created_at ? new Date(resource.created_at).toLocaleString() : "Unknown"}</p>
-          <p className="text-sm text-slate-600">Node: {resource.node_name || "Not available"}</p>
-          <p className="text-sm text-slate-600">Restarts: {resource.restart_count ?? "Not available"}</p>
-          <p className="text-sm text-slate-600">Owner: {ownerRefs || "Not available"}</p>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-5 space-y-3">
+          <h2 className="font-semibold text-white">Metadata</h2>
+          <p className="text-sm text-slate-300">Created: {resource.created_at ? new Date(resource.created_at).toLocaleString() : "Unknown"}</p>
+          <p className="text-sm text-slate-300">Node: {resource.node_name || "Not available"}</p>
+          <p className="text-sm text-slate-300">Restarts: {resource.restart_count ?? "Not available"}</p>
+          <p className="text-sm text-slate-300">Owner: {ownerRefs || "Not available"}</p>
         </div>
-        <div className="card space-y-3">
-          <h2 className="font-semibold">Runtime</h2>
-          <p className="text-sm text-slate-600">Containers: {containerNames || "Not available"}</p>
-          <p className="break-words text-sm text-slate-600">Images: {images || "Not available"}</p>
-          <p className="text-sm text-slate-600">Phase: {String(status.phase || resource.status || "Unknown")}</p>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-5 space-y-3">
+          <h2 className="font-semibold text-white">Runtime</h2>
+          <p className="text-sm text-slate-300">Containers: {containerNames || "Not available"}</p>
+          <p className="break-words text-sm text-slate-300">Images: {images || "Not available"}</p>
+          <p className="text-sm text-slate-300">Phase: {String(status.phase || resource.status || "Unknown")}</p>
         </div>
       </div>
-      <div className="card space-y-3"><h2 className="font-semibold">Labels</h2>{labels(resource.labels)}</div>
+      <div className="rounded-lg border border-slate-800 bg-slate-900 p-5 space-y-3"><h2 className="font-semibold text-white">Labels</h2>{labels(resource.labels)}</div>
     </div>}
 
     {tab === "Logs" && <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <input className="input sm:max-w-md" placeholder="Filter log lines" value={query} onChange={(event) => setQuery(event.target.value)} />
-        <button className="btn-secondary" disabled={logLoading || cooldownSeconds > 0} onClick={() => void refreshLogs()}>{logLoading ? "Refreshing..." : cooldownSeconds > 0 ? `Refresh in ${cooldownSeconds}s` : "Refresh"}</button>
+        <input className="input border-slate-700 bg-slate-900 text-slate-100 sm:max-w-md" placeholder="Filter log lines" value={query} onChange={(event) => setQuery(event.target.value)} />
+        <button className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800" disabled={logLoading || cooldownSeconds > 0} onClick={() => void refreshLogs()}>{logLoading ? "Refreshing..." : cooldownSeconds > 0 ? `Refresh in ${cooldownSeconds}s` : "Refresh"}</button>
       </div>
-      {logError && <div className="card border-red-200 text-red-700">{logError}</div>}
-      {logs?.length === 0 && <div className="card">No logs found for this resource yet.</div>}
+      {logError && <div className="rounded-lg border border-red-900 bg-red-950/40 p-4 text-red-300">{logError}</div>}
+      {logs?.length === 0 && <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-300">No logs found for this resource yet.</div>}
       <div className="max-h-[640px] overflow-auto rounded-lg bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100">
         {filteredLogs.length === 0 && logs !== null ? <p className="text-slate-400">No log lines match the current filter.</p> : filteredLogs.map((entry, index) => <div key={`${entry.timestamp || "line"}-${index}`} className="grid gap-3 border-b border-slate-800 py-1 md:grid-cols-[190px_140px_1fr]"><span className="text-slate-400">{entry.timestamp || "-"}</span><span className="text-cyan-300">{entry.container || "container"}</span><span className="whitespace-pre-wrap break-words">{entry.message}</span></div>)}
       </div>
@@ -279,45 +288,45 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
 
     {tab === "Incidents" && <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="card"><p className="text-sm text-slate-500">Critical</p><p className="mt-2 text-2xl font-bold text-red-700">{incidentSummary.critical}</p></div>
-        <div className="card"><p className="text-sm text-slate-500">Major</p><p className="mt-2 text-2xl font-bold text-amber-700">{incidentSummary.major}</p></div>
-        <div className="card"><p className="text-sm text-slate-500">Minor</p><p className="mt-2 text-2xl font-bold text-blue-700">{incidentSummary.minor}</p></div>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><p className="text-sm text-slate-400">Critical</p><p className="mt-2 text-2xl font-bold text-red-300">{incidentSummary.critical}</p></div>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><p className="text-sm text-slate-400">Major</p><p className="mt-2 text-2xl font-bold text-amber-300">{incidentSummary.major}</p></div>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><p className="text-sm text-slate-400">Minor</p><p className="mt-2 text-2xl font-bold text-blue-300">{incidentSummary.minor}</p></div>
       </div>
       <div className="flex flex-col gap-2 lg:flex-row">
-        <select className="input lg:w-40" value={incidentSeverity} onChange={(event) => setIncidentSeverity(event.target.value)}>
+        <select className="input border-slate-700 bg-slate-900 text-slate-100 lg:w-40" value={incidentSeverity} onChange={(event) => setIncidentSeverity(event.target.value)}>
           <option value="all">All severities</option>
           <option value="critical">Critical</option>
           <option value="major">Major</option>
           <option value="minor">Minor</option>
         </select>
-        <select className="input lg:w-40" value={incidentStatus} onChange={(event) => setIncidentStatus(event.target.value)}>
+        <select className="input border-slate-700 bg-slate-900 text-slate-100 lg:w-40" value={incidentStatus} onChange={(event) => setIncidentStatus(event.target.value)}>
           <option value="all">All status</option>
           <option value="open">Open</option>
           <option value="acknowledged">Acknowledged</option>
           <option value="resolved">Resolved</option>
           <option value="ignored">Ignored</option>
         </select>
-        <select className="input lg:w-48" value={incidentContainer} onChange={(event) => setIncidentContainer(event.target.value)}>
+        <select className="input border-slate-700 bg-slate-900 text-slate-100 lg:w-48" value={incidentContainer} onChange={(event) => setIncidentContainer(event.target.value)}>
           {incidentContainers.map((item) => <option key={item} value={item}>{item === "all" ? "All containers" : item}</option>)}
         </select>
       </div>
-      {incidentError && <div className="card border-red-200 text-red-700">{incidentError}</div>}
-      {incidentLoading && <div className="card">Loading incidents...</div>}
-      {!incidentLoading && incidents?.length === 0 && <div className="card"><h2 className="text-lg font-semibold">No incidents detected for this resource.</h2><p className="mt-2 text-slate-600">Once ClusterSage sees repeated error patterns or correlated failures for this workload, they’ll show up here.</p></div>}
+      {incidentError && <div className="rounded-lg border border-red-900 bg-red-950/40 p-4 text-red-300">{incidentError}</div>}
+      {incidentLoading && <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-300">Loading incidents...</div>}
+      {!incidentLoading && incidents?.length === 0 && <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><h2 className="text-lg font-semibold text-white">No incidents detected for this resource.</h2><p className="mt-2 text-slate-400">Once ClusterSage sees repeated error patterns or correlated failures for this workload, they&apos;ll show up here.</p></div>}
       {!incidentLoading && incidents && incidents.length > 0 && <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.9fr)]">
         <div className="space-y-3">
-          {filteredIncidents.length === 0 && <div className="card">No incidents match the current filters.</div>}
-          {filteredIncidents.map((incident) => <button key={incident.id} className={`card block w-full text-left ${selectedIncident?.id === incident.id ? "border-blue-300 ring-1 ring-blue-200" : ""}`} onClick={() => setSelectedIncidentId(incident.id)}>
+          {filteredIncidents.length === 0 && <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-300">No incidents match the current filters.</div>}
+          {filteredIncidents.map((incident) => <button key={incident.id} className={`block w-full rounded-lg border bg-slate-900 p-4 text-left ${selectedIncident?.id === incident.id ? "border-blue-400 ring-1 ring-blue-300/30" : "border-slate-800"}`} onClick={() => setSelectedIncidentId(incident.id)}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${severityTone(incident.severity)}`}>{incident.severity}</span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{incident.status}</span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{incident.incident_type}</span>
+                  <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{incident.status}</span>
+                  <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{incident.incident_type}</span>
                 </div>
-                <h2 className="text-base font-semibold">{incident.title}</h2>
-                <p className="text-sm text-slate-600">{incident.namespace || "cluster"}{incident.pod_name ? ` / ${incident.pod_name}` : ""}{incident.container_name ? ` / ${incident.container_name}` : ""}</p>
-                <p className="text-sm text-slate-700">{incident.ai_summary || incident.description || "No summary available."}</p>
+                <h2 className="text-base font-semibold text-white">{incident.title}</h2>
+                <p className="text-sm text-slate-400">{incident.namespace || "cluster"}{incident.pod_name ? ` / ${incident.pod_name}` : ""}{incident.container_name ? ` / ${incident.container_name}` : ""}</p>
+                <p className="text-sm text-slate-300">{incident.ai_summary || incident.description || "No summary available."}</p>
               </div>
               <div className="text-right text-xs text-slate-500">
                 <p>Seen {incident.occurrence_count} times</p>
@@ -326,25 +335,25 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
             </div>
           </button>)}
         </div>
-        <div className="card space-y-4">
-          {!selectedIncident ? <p className="text-sm text-slate-500">Select an incident to inspect the evidence and timeline.</p> : <>
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 space-y-4">
+          {!selectedIncident ? <p className="text-sm text-slate-400">Select an incident to inspect the evidence and timeline.</p> : <>
             <div className="flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${severityTone(selectedIncident.severity)}`}>{selectedIncident.severity}</span>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{selectedIncident.status}</span>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">Confidence {(selectedIncident.confidence_score ?? 0).toFixed(2)}</span>
+              <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{selectedIncident.status}</span>
+              <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">Confidence {(selectedIncident.confidence_score ?? 0).toFixed(2)}</span>
             </div>
             <div>
-              <h2 className="text-lg font-semibold">{selectedIncident.title}</h2>
-              <p className="mt-2 text-sm text-slate-700">{selectedIncident.ai_summary || selectedIncident.description || "No summary available."}</p>
+              <h2 className="text-lg font-semibold text-white">{selectedIncident.title}</h2>
+              <p className="mt-2 text-sm text-slate-300">{selectedIncident.ai_summary || selectedIncident.description || "No summary available."}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">First seen</p><p className="mt-1 text-sm text-slate-700">{new Date(selectedIncident.first_seen_at).toLocaleString()}</p></div>
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Last seen</p><p className="mt-1 text-sm text-slate-700">{new Date(selectedIncident.last_seen_at).toLocaleString()}</p></div>
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Namespace</p><p className="mt-1 text-sm text-slate-700">{selectedIncident.namespace || "cluster"}</p></div>
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Container</p><p className="mt-1 text-sm text-slate-700">{selectedIncident.container_name || "Unknown"}</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">First seen</p><p className="mt-1 text-sm text-slate-300">{new Date(selectedIncident.first_seen_at).toLocaleString()}</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Last seen</p><p className="mt-1 text-sm text-slate-300">{new Date(selectedIncident.last_seen_at).toLocaleString()}</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Namespace</p><p className="mt-1 text-sm text-slate-300">{selectedIncident.namespace || "cluster"}</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Container</p><p className="mt-1 text-sm text-slate-300">{selectedIncident.container_name || "Unknown"}</p></div>
             </div>
             <div className="space-y-2">
-              <h3 className="font-semibold">Evidence preview</h3>
+              <h3 className="font-semibold text-white">Evidence preview</h3>
               <div className="max-h-72 overflow-auto rounded-lg bg-slate-950 p-3 font-mono text-xs text-slate-100">
                 {evidenceLines(selectedIncident.evidence).length === 0 && <p className="text-slate-400">No evidence lines stored.</p>}
                 {evidenceLines(selectedIncident.evidence).map((line, index) => <div key={`${line.timestamp || "line"}-${index}`} className="border-b border-slate-800 py-2 last:border-b-0">
@@ -355,7 +364,7 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
               </div>
             </div>
             <div className="pt-1">
-              <button className="btn-secondary" onClick={() => setTab("Logs")}>View related logs</button>
+              <button className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800" onClick={() => setTab("Logs")}>View related logs</button>
             </div>
           </>}
         </div>
@@ -363,43 +372,47 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
     </div>}
 
     {tab === "AI Suggestions" && <div className="space-y-4">
-      {suggestionError && <div className="card border-red-200 text-red-700">{suggestionError}</div>}
-      {suggestionLoading && <div className="card">Loading AI suggestions...</div>}
-      {!suggestionLoading && suggestions?.length === 0 && <div className="card"><h2 className="text-lg font-semibold">No AI suggestions yet.</h2><p className="mt-2 text-slate-600">Suggestions appear only after ClusterSage has enough incident evidence to recommend a next step for this resource.</p></div>}
+      <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
+        <h2 className="text-lg font-semibold text-white">AI Suggestions</h2>
+        <p className="mt-2 text-sm text-slate-400">These suggestions are produced by backend analysis of stored incident evidence. The frontend never talks directly to Azure AI services and cannot execute actions by itself.</p>
+      </div>
+      {suggestionError && <div className="rounded-lg border border-red-900 bg-red-950/40 p-4 text-red-300">{suggestionError}</div>}
+      {suggestionLoading && <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-300">Loading AI suggestions...</div>}
+      {!suggestionLoading && suggestions?.length === 0 && <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><h2 className="text-lg font-semibold text-white">No AI suggestions yet.</h2><p className="mt-2 text-slate-400">Suggestions appear only after ClusterSage has enough incident evidence to recommend a next step for this resource.</p></div>}
       <div className="space-y-3">
         {suggestions?.map((suggestion) => {
           const actionPayload = asRecord(suggestion.action_payload);
           const actionState = suggestion.latest_action_status ? suggestion.latest_action_status.replace(/_/g, " ") : null;
           const approvalState = suggestion.latest_approval_status ? suggestion.latest_approval_status.replace(/_/g, " ") : null;
           const isApprovingThis = approveIntentId === suggestion.id;
-          return <div key={suggestion.id} className="card space-y-4">
+          return <div key={suggestion.id} className="rounded-lg border border-slate-800 bg-slate-900 p-5 space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${riskTone(suggestion.risk_level)}`}>{suggestion.risk_level} risk</span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{suggestion.suggestion_type}</span>
+                  <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{suggestion.suggestion_type}</span>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${severityTone(suggestion.incident_severity)}`}>{suggestion.incident_severity} incident</span>
                 </div>
-                <h2 className="text-lg font-semibold">{suggestion.title}</h2>
-                <p className="text-sm text-slate-700">{suggestion.summary}</p>
+                <h2 className="text-lg font-semibold text-white">{suggestion.title}</h2>
+                <p className="text-sm text-slate-300">{suggestion.summary}</p>
               </div>
               <div className="text-right text-xs text-slate-500">
                 <p>{new Date(suggestion.updated_at).toLocaleString()}</p>
                 <p>Confidence {(suggestion.confidence_score ?? 0).toFixed(2)}</p>
               </div>
             </div>
-            {(approvalState || actionState) && <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+            {(approvalState || actionState) && <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-sm text-slate-300">
               <p>Approval status: <span className="font-medium">{approvalState || "not requested"}</span></p>
               <p>Action status: <span className="font-medium">{actionState || "not created"}</span></p>
             </div>}
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Related incident</p>
-                <p className="mt-1 text-sm text-slate-700">{suggestion.incident_title}</p>
+                <p className="mt-1 text-sm text-slate-300">{suggestion.incident_title}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Approval required</p>
-                <p className="mt-1 text-sm text-slate-700">{suggestion.requires_approval ? "Yes" : "No"}</p>
+                <p className="mt-1 text-sm text-slate-300">{suggestion.requires_approval ? "Yes" : "No"}</p>
               </div>
             </div>
             {suggestion.suggestion_type === "rollout_restart" && <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
