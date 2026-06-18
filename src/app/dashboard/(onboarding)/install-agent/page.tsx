@@ -12,6 +12,22 @@ const agentChartVersion = process.env.NEXT_PUBLIC_AGENT_CHART_VERSION || "0.1.2"
 const defaultAgentRepository = publicAgentImage.replace(/:[^/:]+$/, "");
 const defaultAgentTag = publicAgentImage.match(/:([^/:]+)$/)?.[1] || "stable";
 
+function StepCard({ step, title, children }: { step: string; title: string; children: React.ReactNode }) {
+  return (
+    <section className="card space-y-4">
+      <div className="flex items-start gap-4">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-sm font-semibold text-[var(--primary)]">
+          {step}
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold">{title}</h2>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function InstallAgentPage() {
   const [user, setUser] = useState<User | null>(null);
   const [keys, setKeys] = useState<AgentKey[]>([]);
@@ -52,61 +68,94 @@ export default function InstallAgentPage() {
       <div>
         <p className="eyebrow">Agent onboarding</p>
         <h1 className="section-title mt-2">Install the ClusterSage agent</h1>
-        <p className="section-copy mt-2">
-          Logged in as {user?.email || "loading..."}. The agent runs inside your cluster and pushes data outward.
-        </p>
+        <p className="section-copy mt-2">Logged in as {user?.email || "loading..."}. Follow these steps to connect a cluster.</p>
       </div>
       {error && <div className="card border-[var(--danger-bg)] text-[var(--danger-text)]">{error}</div>}
 
-      <div className="card space-y-3 border-[var(--primary-ring)] bg-[var(--primary-soft)]/70">
-        <h2 className="text-xl font-semibold">Public agent image</h2>
-        <p className="text-sm muted">This image is publicly pullable without Docker login or Kubernetes image pull secrets.</p>
-        <CodeBlock value={exactImage} />
-        <CodeBlock value={pullCommands} />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_320px]">
+        <div className="card space-y-4 border-[var(--primary-ring)] bg-[var(--primary-soft)]/70">
+          <p className="eyebrow">Quick setup</p>
+          <h2 className="text-2xl font-semibold">Everything you need to connect a cluster</h2>
+          <p className="section-copy">Generate a key, prepare the values file, install the chart, and confirm the pods are running.</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="panel bg-[var(--bg-elevated)] p-4 shadow-none">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">Cluster name</p>
+              <p className="mt-2 break-words text-sm font-medium text-[var(--text)]">{clusterName}</p>
+            </div>
+            <div className="panel bg-[var(--bg-elevated)] p-4 shadow-none">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">Chart version</p>
+              <p className="mt-2 text-sm font-medium text-[var(--text)]">{agentChartVersion}</p>
+            </div>
+            <div className="panel bg-[var(--bg-elevated)] p-4 shadow-none">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">Image tag</p>
+              <p className="mt-2 text-sm font-medium text-[var(--text)]">{imageTag}</p>
+            </div>
+          </div>
+        </div>
+
+        <aside className="panel-subtle p-5">
+          <p className="eyebrow">Before you start</p>
+          <ul className="mt-4 space-y-3 text-sm text-[var(--text-muted)]">
+            <li>Use a clear cluster name your team will recognize.</li>
+            <li>Copy the access key as soon as it appears.</li>
+            <li>Keep the values file nearby while you install.</li>
+            <li>Verify pods before leaving this page.</li>
+          </ul>
+        </aside>
       </div>
 
-      <div className="card space-y-3">
-        <h2 className="text-xl font-semibold">1. Generate an access key</h2>
+      <StepCard step="1" title="Generate an access key">
         <form onSubmit={generate} className="grid gap-3 md:grid-cols-4">
-          <input className="input" value={clusterName} onChange={(e) => setClusterName(e.target.value)} />
-          <input className="input md:col-span-2" value={imageRepo} onChange={(e) => setImageRepo(e.target.value)} />
-          <input className="input" value={imageTag} onChange={(e) => setImageTag(e.target.value)} />
+          <div className="space-y-2">
+            <label className="text-sm font-medium muted">Cluster name</label>
+            <input className="input" value={clusterName} onChange={(e) => setClusterName(e.target.value)} />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-medium muted">Image repository</label>
+            <input className="input" value={imageRepo} onChange={(e) => setImageRepo(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium muted">Image tag</label>
+            <input className="input" value={imageTag} onChange={(e) => setImageTag(e.target.value)} />
+          </div>
           <button className="btn md:col-span-4">Generate one-time key</button>
         </form>
         <p className="text-sm muted">
-          The default image is <code>{exactImage}</code>. Already have a key? Paste it into the values.yaml block before installing. Manage keys in{" "}
+          The default image is <code>{exactImage}</code>. Already have a key? Paste it into the values file before installing. Manage keys in{" "}
           <Link className="font-medium text-[var(--primary)]" href="/dashboard/settings/agent-keys">
             Agent Keys
           </Link>
           .
         </p>
-        {accessKey && <CodeBlock value={accessKey} />}
-      </div>
+        {accessKey && (
+          <div className="panel-strong p-4">
+            <p className="text-sm font-semibold text-[var(--text)]">Copy this key now</p>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">It will not be shown again after this session.</p>
+            <div className="mt-3">
+              <CodeBlock value={accessKey} />
+            </div>
+          </div>
+        )}
+      </StepCard>
 
-      <div className="card space-y-3">
-        <h2 className="text-xl font-semibold">2. Pull the chart</h2>
+      <StepCard step="2" title="Confirm the chart">
         <CodeBlock value={`helm show chart ${agentChart} --version ${agentChartVersion}`} />
-        <p className="text-sm muted">The agent chart is published as an OCI Helm chart, so no repository add step is required.</p>
-      </div>
+        <p className="text-sm muted">Use this command to confirm the chart version before you install.</p>
+      </StepCard>
 
-      <div className="card space-y-3">
-        <h2 className="text-xl font-semibold">3. Create <code>clusterwatch-values.yaml</code></h2>
+      <StepCard step="3" title="Create clusterwatch-values.yaml">
         <CodeBlock value={values} />
-        <p className="text-sm muted">
-          <b>Required values:</b> backend.url is the SaaS API URL; auth.email identifies the owning user; auth.accessKey proves organization access; cluster.name is the display name; agent.image.repository and agent.image.tag point to the public collector image.
-        </p>
-      </div>
+        <p className="text-sm muted">Fill in the access key, cluster name, and image values before you install.</p>
+      </StepCard>
 
-      <div className="card space-y-3">
-        <h2 className="text-xl font-semibold">4. Install and verify</h2>
+      <StepCard step="4" title="Install and verify">
         <CodeBlock value={install} />
         <CodeBlock value={`kubectl get pods -n clusterwatch-agent\nkubectl logs deploy/clusterwatch-collector -n clusterwatch-agent\nkubectl get daemonset clusterwatch-fluent-bit -n clusterwatch-agent`} />
-      </div>
+      </StepCard>
 
-      <div className="card space-y-3">
-        <h2 className="text-xl font-semibold">5. Troubleshoot or uninstall</h2>
+      <StepCard step="5" title="Troubleshoot or remove">
         <CodeBlock value={`kubectl describe pod -n clusterwatch-agent -l app.kubernetes.io/component=collector\nkubectl logs -n clusterwatch-agent -l app.kubernetes.io/component=fluent-bit\nhelm uninstall clusterwatch-agent -n clusterwatch-agent\nkubectl delete namespace clusterwatch-agent`} />
-      </div>
+      </StepCard>
     </div>
   );
 }

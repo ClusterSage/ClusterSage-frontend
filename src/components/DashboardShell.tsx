@@ -13,7 +13,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <Link href="/dashboard" className="block rounded-2xl">
         <BrandLogo textClassName="text-xl" />
       </Link>
-      <p className="mt-6 section-copy">Operations workspace for cluster inventory, agent installation, and organization access.</p>
+      <p className="mt-6 section-copy">Workspace for clusters, access, and setup.</p>
       <nav className="mt-8 space-y-1.5">
         {nav.map(([href,label]) => {
           const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
@@ -30,10 +30,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="eyebrow">ClusterSage console</p>
-            <h1 className="mt-2 text-xl font-semibold tracking-tight text-[var(--text)]">Operational visibility for connected clusters</h1>
+            <h1 className="mt-2 text-xl font-semibold tracking-tight text-[var(--text)]">One place for cluster setup and review</h1>
           </div>
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-sm text-[var(--text-muted)] shadow-sm">
-            Private-cluster onboarding stays separated from cluster investigations.
+            Setup stays separate from day-to-day cluster review.
           </div>
         </div>
       </header>

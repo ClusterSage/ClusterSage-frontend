@@ -37,7 +37,7 @@ const metricConfigs: Record<AlertLimitMetricType, MetricConfig> = {
   },
   pod_restarts: {
     label: "Pod restart count",
-    description: "Evaluates restart-heavy pods from the latest resource snapshot data.",
+    description: "Flags pods with high restart counts.",
     defaultOperator: "gt",
     defaultSeverity: "major",
     defaultThreshold: 5,
@@ -86,7 +86,7 @@ const metricConfigs: Record<AlertLimitMetricType, MetricConfig> = {
   },
   warning_events: {
     label: "Warning events",
-    description: "Tracks warning-type Kubernetes events for the cluster.",
+    description: "Tracks warning events for the cluster.",
     clusterOnly: true,
     defaultOperator: "gt",
     defaultSeverity: "major",
@@ -134,9 +134,9 @@ function metricLabel(metric: AlertLimitMetricType) {
 }
 
 function severityTone(severity: AlertLimitSeverity) {
-  if (severity === "critical") return "bg-red-500/15 text-red-200 ring-1 ring-red-400/20";
-  if (severity === "major") return "bg-amber-500/15 text-amber-100 ring-1 ring-amber-300/20";
-  return "bg-blue-500/15 text-blue-200 ring-1 ring-blue-300/20";
+  if (severity === "critical") return "bg-[var(--danger-bg)] text-[var(--danger-text)] ring-1 ring-[var(--danger-bg)]";
+  if (severity === "major") return "bg-[var(--warning-bg)] text-[var(--warning-text)] ring-1 ring-[var(--warning-bg)]";
+  return "bg-[var(--info-bg)] text-[var(--info-text)] ring-1 ring-[var(--info-bg)]";
 }
 
 function buildDefaults(metric: AlertLimitMetricType): FormState {
@@ -407,92 +407,92 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
   const scopedScopeOptions = currentMetricConfig.clusterOnly ? scopeOptions.filter((item) => item.value === "cluster") : scopeOptions;
 
   if (loading) {
-    return <div className="rounded-lg border border-slate-800 bg-slate-900 p-6 text-slate-300">Loading alert limits...</div>;
+    return <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-6 text-[var(--text-muted)]">Loading alert limits...</div>;
   }
 
   return (
-    <div className="space-y-6 text-slate-100">
+    <div className="space-y-6 text-[var(--text)]">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-300">Cluster alerting</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">Limits</h1>
-          <p className="mt-2 max-w-3xl text-sm text-slate-400">
-            Manage cluster-scoped alert thresholds using the same backend definitions the dashboard hands off into. Only real, currently supported telemetry signals are available here.
+          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary)]">Cluster alerting</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text)]">Limits</h1>
+          <p className="mt-2 max-w-3xl text-sm text-[var(--text-muted)]">
+            Manage alert thresholds for the signals available in this workspace.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800" onClick={() => void refreshData(selectedLimitId)}>
+          <button className="btn-secondary border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-subtle)]" onClick={() => void refreshData(selectedLimitId)}>
             Refresh
           </button>
-          <button className="btn bg-blue-600 hover:bg-blue-500" onClick={() => openCreate()}>
+          <button className="btn bg-[var(--primary)] hover:bg-[var(--primary-hover)]" onClick={() => openCreate()}>
             Add alert limit
           </button>
         </div>
       </div>
 
-      {notice && <div className="rounded-lg border border-blue-800 bg-blue-950/30 p-4 text-blue-100">{notice}</div>}
-      {error && <div className="rounded-lg border border-red-900 bg-red-950/40 p-4 text-red-300">{error}</div>}
+      {notice && <div className="rounded-3xl border border-[var(--primary-ring)] bg-[var(--primary-soft)] p-4 text-[var(--primary)]">{notice}</div>}
+      {error && <div className="rounded-3xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-[var(--danger-text)]">{error}</div>}
 
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-sm text-slate-400">Total limits</p>
-          <p className="mt-2 text-2xl font-bold text-white">{summary.total}</p>
+        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+          <p className="text-sm text-[var(--text-muted)]">Total limits</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--text)]">{summary.total}</p>
         </div>
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-sm text-slate-400">Enabled</p>
-          <p className="mt-2 text-2xl font-bold text-emerald-300">{summary.enabled}</p>
+        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+          <p className="text-sm text-[var(--text-muted)]">Enabled</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--success-text)]">{summary.enabled}</p>
         </div>
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-sm text-slate-400">Email notifications</p>
-          <p className="mt-2 text-2xl font-bold text-blue-300">{summary.emailEnabled}</p>
+        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+          <p className="text-sm text-[var(--text-muted)]">Email notifications</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--primary)]">{summary.emailEnabled}</p>
         </div>
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-sm text-slate-400">Triggered historically</p>
-          <p className="mt-2 text-2xl font-bold text-amber-300">{summary.triggered}</p>
+        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+          <p className="text-sm text-[var(--text-muted)]">Triggered historically</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--warning-text)]">{summary.triggered}</p>
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.9fr)]">
         <div className="space-y-4">
-          <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-            <h2 className="text-lg font-semibold text-white">Supported signals</h2>
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+            <h2 className="text-lg font-semibold text-[var(--text)]">Supported signals</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {metricOptions.map(([metric, config]) => (
                 <button
                   key={metric}
-                  className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 text-left transition hover:border-blue-400/30 hover:bg-slate-950"
+                  className="rounded-3xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-[var(--bg-subtle)]"
                   onClick={() => openCreate(metric)}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium text-white">{config.label}</p>
-                    {config.clusterOnly && <span className="rounded-full bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-300">Cluster only</span>}
+                    <p className="font-medium text-[var(--text)]">{config.label}</p>
+                    {config.clusterOnly && <span className="rounded-full bg-[var(--bg-subtle)] px-2 py-1 text-[11px] font-medium text-[var(--text-muted)]">Cluster only</span>}
                   </div>
-                  <p className="mt-2 text-sm text-slate-400">{config.description}</p>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">{config.description}</p>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-800 bg-slate-900">
-            <div className="border-b border-slate-800 px-4 py-4">
-              <h2 className="text-lg font-semibold text-white">Configured limits</h2>
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)]">
+            <div className="border-b border-[var(--border)] px-4 py-4">
+              <h2 className="text-lg font-semibold text-[var(--text)]">Configured limits</h2>
             </div>
             {limits && limits.length === 0 && (
-              <div className="p-6 text-sm text-slate-300">
-                <p className="font-medium text-white">No alert limits yet.</p>
-                <p className="mt-2 text-slate-400">
+              <div className="p-6 text-sm text-[var(--text-muted)]">
+                <p className="font-medium text-[var(--text)]">No alert limits yet.</p>
+                <p className="mt-2 text-[var(--text-muted)]">
                   Start from a supported signal above, or use the dashboard&apos;s Set limit actions for alertable cards.
                 </p>
               </div>
             )}
-            <div className="divide-y divide-slate-800">
+            <div className="divide-y divide-[var(--border)]">
               {(limits || []).map((limit) => {
                 const latestEvent = latestEventByLimit.get(limit.id);
                 const eventCount = eventCountsByLimit.get(limit.id) || 0;
                 return (
                   <div
                     key={limit.id}
-                    className={`p-4 ${selectedLimitId === limit.id ? "bg-slate-950/50" : ""}`}
+                    className={`p-4 ${selectedLimitId === limit.id ? "bg-[var(--bg-subtle)]" : ""}`}
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <button className="min-w-0 flex-1 text-left" onClick={() => setSelectedLimitId(limit.id)}>
@@ -500,16 +500,16 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
                           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${severityTone(limit.severity)}`}>
                             {limit.severity}
                           </span>
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${limit.enabled ? "bg-emerald-500/15 text-emerald-200" : "bg-slate-800 text-slate-300"}`}>
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${limit.enabled ? "bg-[var(--success-bg)]0/15 text-[var(--success-text)]" : "bg-[var(--bg-subtle)] text-[var(--text-muted)]"}`}>
                             {limit.enabled ? "Enabled" : "Disabled"}
                           </span>
-                          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{metricLabel(limit.metric_type)}</span>
+                          <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)]">{metricLabel(limit.metric_type)}</span>
                         </div>
-                        <h3 className="mt-3 text-base font-semibold text-white">{limit.name}</h3>
-                        <p className="mt-2 text-sm text-slate-400">
+                        <h3 className="mt-3 text-base font-semibold text-[var(--text)]">{limit.name}</h3>
+                        <p className="mt-2 text-sm text-[var(--text-muted)]">
                           Trigger when {metricLabel(limit.metric_type).toLowerCase()} {operatorLabels[limit.operator]} {limit.threshold_value} for {limit.time_window_minutes} minute{limit.time_window_minutes === 1 ? "" : "s"}.
                         </p>
-                        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
+                        <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--text-soft)]">
                           <span>Scope: {limit.scope_type}</span>
                           {limit.namespace && <span>Namespace: {limit.namespace}</span>}
                           {limit.workload_name && <span>Workload: {limit.workload_name}</span>}
@@ -518,22 +518,22 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
                           <span>{limit.email_enabled ? `Email: ${limit.notification_email || "default user email"}` : "Email disabled"}</span>
                           <span>{eventCount} event{eventCount === 1 ? "" : "s"}</span>
                         </div>
-                        <p className="mt-2 text-xs text-slate-500">
+                        <p className="mt-2 text-xs text-[var(--text-soft)]">
                           Last triggered: {limit.last_triggered_at ? new Date(limit.last_triggered_at).toLocaleString() : "Never"}
                           {latestEvent ? ` | Latest event ${new Date(latestEvent.triggered_at).toLocaleString()}` : ""}
                         </p>
                       </button>
                       <div className="flex flex-wrap gap-2">
-                        <button className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800" onClick={() => openEdit(limit)}>
+                        <button className="btn-secondary border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-subtle)]" onClick={() => openEdit(limit)}>
                           Edit
                         </button>
                         <button
-                          className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                          className="btn-secondary border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-subtle)]"
                           onClick={() => void toggleLimit(limit, !limit.enabled)}
                         >
                           {limit.enabled ? "Disable" : "Enable"}
                         </button>
-                        <button className="btn-secondary border-red-900 bg-red-950/40 text-red-200 hover:bg-red-950/60" onClick={() => void deleteLimit(limit)}>
+                        <button className="btn-secondary border-[var(--danger-bg)] bg-[var(--danger-bg)] text-red-200 hover:bg-red-950/60" onClick={() => void deleteLimit(limit)}>
                           Delete
                         </button>
                       </div>
@@ -544,24 +544,24 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-800 bg-slate-900">
-            <div className="border-b border-slate-800 px-4 py-4">
-              <h2 className="text-lg font-semibold text-white">Trigger history</h2>
-              <p className="mt-1 text-sm text-slate-400">This will stay mostly empty until backend alert evaluation is wired in a later phase.</p>
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)]">
+            <div className="border-b border-[var(--border)] px-4 py-4">
+              <h2 className="text-lg font-semibold text-[var(--text)]">Trigger history</h2>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">Recent trigger history appears here.</p>
             </div>
-            {events && events.length === 0 && <div className="p-6 text-sm text-slate-400">No alert events have been recorded yet.</div>}
+            {events && events.length === 0 && <div className="p-6 text-sm text-[var(--text-muted)]">No alert events have been recorded yet.</div>}
             {events && events.length > 0 && (
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-[var(--border)]">
                 {events.slice(0, 12).map((event) => (
-                  <div key={event.id} className="flex flex-col gap-2 px-4 py-3 text-sm text-slate-300 md:flex-row md:items-center md:justify-between">
+                  <div key={event.id} className="flex flex-col gap-2 px-4 py-3 text-sm text-[var(--text-muted)] md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="font-medium text-white">{(limits || []).find((item) => item.id === event.alert_limit_id)?.name || "Unknown limit"}</p>
-                      <p className="mt-1 text-slate-400">
+                      <p className="font-medium text-[var(--text)]">{(limits || []).find((item) => item.id === event.alert_limit_id)?.name || "Unknown limit"}</p>
+                      <p className="mt-1 text-[var(--text-muted)]">
                         Threshold {event.threshold_value}
                         {event.metric_value !== null && event.metric_value !== undefined ? ` | Observed ${event.metric_value}` : ""}
                       </p>
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-[var(--text-soft)]">
                       <p>{new Date(event.triggered_at).toLocaleString()}</p>
                       <p>{event.notification_sent ? "Notification sent" : event.notification_error || "Notification not sent"}</p>
                     </div>
@@ -573,20 +573,20 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-blue-300">{drawerMode === "create" ? "Create limit" : "Edit limit"}</p>
-                <h2 className="mt-1 text-xl font-semibold text-white">
+                <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary)]">{drawerMode === "create" ? "Create limit" : "Edit limit"}</p>
+                <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">
                   {drawerOpen ? (drawerMode === "create" ? "New alert limit" : selectedLimit?.name || "Update alert limit") : "Limit details"}
                 </h2>
               </div>
               {drawerOpen ? (
-                <button className="text-sm font-medium text-slate-400 hover:text-white" onClick={() => setDrawerOpen(false)}>
+                <button className="text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)]" onClick={() => setDrawerOpen(false)}>
                   Close
                 </button>
               ) : (
-                <button className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800" onClick={() => openCreate()}>
+                <button className="btn-secondary border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-subtle)]" onClick={() => openCreate()}>
                   New
                 </button>
               )}
@@ -598,33 +598,33 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${severityTone(selectedLimit.severity)}`}>
                     {selectedLimit.severity}
                   </span>
-                  <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300">{metricLabel(selectedLimit.metric_type)}</span>
+                  <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)]">{metricLabel(selectedLimit.metric_type)}</span>
                 </div>
-                <p className="text-sm text-slate-300">{selectedLimit.name}</p>
+                <p className="text-sm text-[var(--text-muted)]">{selectedLimit.name}</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Threshold</p>
-                    <p className="mt-1 text-sm text-slate-300">{operatorLabels[selectedLimit.operator]} {selectedLimit.threshold_value}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-soft)]">Threshold</p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">{operatorLabels[selectedLimit.operator]} {selectedLimit.threshold_value}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Time window</p>
-                    <p className="mt-1 text-sm text-slate-300">{selectedLimit.time_window_minutes} minutes</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-soft)]">Time window</p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">{selectedLimit.time_window_minutes} minutes</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Scope</p>
-                    <p className="mt-1 text-sm text-slate-300">{selectedLimit.scope_type}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-soft)]">Scope</p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">{selectedLimit.scope_type}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Cooldown</p>
-                    <p className="mt-1 text-sm text-slate-300">{selectedLimit.cooldown_minutes} minutes</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-soft)]">Cooldown</p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">{selectedLimit.cooldown_minutes} minutes</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800" onClick={() => openEdit(selectedLimit)}>
+                  <button className="btn-secondary border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-subtle)]" onClick={() => openEdit(selectedLimit)}>
                     Edit this limit
                   </button>
                   <button
-                    className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                    className="btn-secondary border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-subtle)]"
                     onClick={() => void toggleLimit(selectedLimit, !selectedLimit.enabled)}
                   >
                     {selectedLimit.enabled ? "Disable" : "Enable"}
@@ -634,22 +634,22 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
             )}
 
             {!drawerOpen && !selectedLimit && (
-              <div className="mt-4 rounded-lg border border-dashed border-slate-700 bg-slate-950/40 p-4 text-sm text-slate-400">
+              <div className="mt-4 rounded-3xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-subtle)]/40 p-4 text-sm text-[var(--text-muted)]">
                 Select a configured limit or create a new one from a supported signal.
               </div>
             )}
 
             {drawerOpen && (
               <div className="mt-5 space-y-4">
-                {submitError && <div className="rounded-lg border border-red-900 bg-red-950/40 p-4 text-sm text-red-300">{submitError}</div>}
+                {submitError && <div className="rounded-3xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-sm text-[var(--danger-text)]">{submitError}</div>}
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-200">Name</label>
-                  <input className="input border-slate-700 bg-slate-950 text-slate-100" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+                  <label className="mb-2 block text-sm font-medium text-[var(--text)]">Name</label>
+                  <input className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-200">Metric</label>
+                  <label className="mb-2 block text-sm font-medium text-[var(--text)]">Metric</label>
                   <select
-                    className="input border-slate-700 bg-slate-950 text-slate-100"
+                    className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]"
                     value={form.metric_type}
                     onChange={(event) => {
                       const nextMetric = event.target.value as AlertLimitMetricType;
@@ -672,13 +672,13 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
                       </option>
                     ))}
                   </select>
-                  <p className="mt-2 text-xs text-slate-500">{currentMetricConfig.description}</p>
+                  <p className="mt-2 text-xs text-[var(--text-soft)]">{currentMetricConfig.description}</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Scope</label>
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Scope</label>
                     <select
-                      className="input border-slate-700 bg-slate-950 text-slate-100"
+                      className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]"
                       value={currentMetricConfig.clusterOnly ? "cluster" : form.scope_type}
                       onChange={(event) => setForm((current) => ({ ...current, scope_type: event.target.value as AlertLimitScopeType }))}
                       disabled={currentMetricConfig.clusterOnly}
@@ -691,8 +691,8 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
                     </select>
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Operator</label>
-                    <select className="input border-slate-700 bg-slate-950 text-slate-100" value={form.operator} onChange={(event) => setForm((current) => ({ ...current, operator: event.target.value as AlertLimitOperator }))}>
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Operator</label>
+                    <select className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" value={form.operator} onChange={(event) => setForm((current) => ({ ...current, operator: event.target.value as AlertLimitOperator }))}>
                       {Object.entries(operatorLabels).map(([operator, label]) => (
                         <option key={operator} value={operator}>
                           {label}
@@ -704,78 +704,78 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
 
                 {!currentMetricConfig.clusterOnly && form.scope_type === "namespace" && (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Namespace</label>
-                    <input className="input border-slate-700 bg-slate-950 text-slate-100" value={form.namespace} onChange={(event) => setForm((current) => ({ ...current, namespace: event.target.value }))} placeholder="prod" />
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Namespace</label>
+                    <input className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" value={form.namespace} onChange={(event) => setForm((current) => ({ ...current, namespace: event.target.value }))} placeholder="prod" />
                   </div>
                 )}
                 {!currentMetricConfig.clusterOnly && form.scope_type === "workload" && (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Workload name</label>
-                    <input className="input border-slate-700 bg-slate-950 text-slate-100" value={form.workload_name} onChange={(event) => setForm((current) => ({ ...current, workload_name: event.target.value }))} placeholder="platform-api" />
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Workload name</label>
+                    <input className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" value={form.workload_name} onChange={(event) => setForm((current) => ({ ...current, workload_name: event.target.value }))} placeholder="platform-api" />
                   </div>
                 )}
                 {!currentMetricConfig.clusterOnly && form.scope_type === "resource" && (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Resource identifier</label>
-                    <input className="input border-slate-700 bg-slate-950 text-slate-100" value={form.resource_id} onChange={(event) => setForm((current) => ({ ...current, resource_id: event.target.value }))} placeholder="Pod/default/platform-api-abc123" />
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Resource identifier</label>
+                    <input className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" value={form.resource_id} onChange={(event) => setForm((current) => ({ ...current, resource_id: event.target.value }))} placeholder="Pod/default/platform-api-abc123" />
                   </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Threshold value</label>
-                    <input className="input border-slate-700 bg-slate-950 text-slate-100" type="number" value={form.threshold_value} onChange={(event) => setForm((current) => ({ ...current, threshold_value: event.target.value }))} />
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Threshold value</label>
+                    <input className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" type="number" value={form.threshold_value} onChange={(event) => setForm((current) => ({ ...current, threshold_value: event.target.value }))} />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Time window (minutes)</label>
-                    <input className="input border-slate-700 bg-slate-950 text-slate-100" type="number" value={form.time_window_minutes} onChange={(event) => setForm((current) => ({ ...current, time_window_minutes: event.target.value }))} />
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Time window (minutes)</label>
+                    <input className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" type="number" value={form.time_window_minutes} onChange={(event) => setForm((current) => ({ ...current, time_window_minutes: event.target.value }))} />
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Severity</label>
-                    <select className="input border-slate-700 bg-slate-950 text-slate-100" value={form.severity} onChange={(event) => setForm((current) => ({ ...current, severity: event.target.value as AlertLimitSeverity }))}>
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Severity</label>
+                    <select className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" value={form.severity} onChange={(event) => setForm((current) => ({ ...current, severity: event.target.value as AlertLimitSeverity }))}>
                       <option value="minor">Minor</option>
                       <option value="major">Major</option>
                       <option value="critical">Critical</option>
                     </select>
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Cooldown (minutes)</label>
-                    <input className="input border-slate-700 bg-slate-950 text-slate-100" type="number" value={form.cooldown_minutes} onChange={(event) => setForm((current) => ({ ...current, cooldown_minutes: event.target.value }))} />
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Cooldown (minutes)</label>
+                    <input className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" type="number" value={form.cooldown_minutes} onChange={(event) => setForm((current) => ({ ...current, cooldown_minutes: event.target.value }))} />
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-4">
+                <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4">
                   <div className="flex items-start gap-3">
-                    <input id="limit-email-enabled" className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-500" type="checkbox" checked={form.email_enabled} onChange={(event) => setForm((current) => ({ ...current, email_enabled: event.target.checked }))} />
+                    <input id="limit-email-enabled" className="mt-1 h-4 w-4 rounded border-[var(--border-strong)] bg-[var(--bg-subtle)] text-blue-500" type="checkbox" checked={form.email_enabled} onChange={(event) => setForm((current) => ({ ...current, email_enabled: event.target.checked }))} />
                     <div className="min-w-0 flex-1">
-                      <label htmlFor="limit-email-enabled" className="text-sm font-medium text-slate-200">Email notification enabled</label>
-                      <p className="mt-1 text-xs text-slate-500">The backend stores the email target now. Actual alert evaluation and delivery are added in a later phase.</p>
+                      <label htmlFor="limit-email-enabled" className="text-sm font-medium text-[var(--text)]">Email notification enabled</label>
+                      <p className="mt-1 text-xs text-[var(--text-soft)]">Use an email address if you want notifications sent there.</p>
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="mb-2 block text-sm font-medium text-slate-200">Notification email</label>
-                    <input className="input border-slate-700 bg-slate-950 text-slate-100" type="email" value={form.notification_email} onChange={(event) => setForm((current) => ({ ...current, notification_email: event.target.value }))} placeholder="Leave blank to use your account email" />
+                    <label className="mb-2 block text-sm font-medium text-[var(--text)]">Notification email</label>
+                    <input className="input border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" type="email" value={form.notification_email} onChange={(event) => setForm((current) => ({ ...current, notification_email: event.target.value }))} placeholder="Leave blank to use your account email" />
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-4">
+                <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4">
                   <div className="flex items-start gap-3">
-                    <input id="limit-enabled" className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-500" type="checkbox" checked={form.enabled} onChange={(event) => setForm((current) => ({ ...current, enabled: event.target.checked }))} />
+                    <input id="limit-enabled" className="mt-1 h-4 w-4 rounded border-[var(--border-strong)] bg-[var(--bg-subtle)] text-blue-500" type="checkbox" checked={form.enabled} onChange={(event) => setForm((current) => ({ ...current, enabled: event.target.checked }))} />
                     <div className="min-w-0 flex-1">
-                      <label htmlFor="limit-enabled" className="text-sm font-medium text-slate-200">Enable immediately</label>
-                      <p className="mt-1 text-xs text-slate-500">You can also save a definition disabled and turn it on later.</p>
+                      <label htmlFor="limit-enabled" className="text-sm font-medium text-[var(--text)]">Enable immediately</label>
+                      <p className="mt-1 text-xs text-[var(--text-soft)]">You can also save a definition disabled and turn it on later.</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <button className="btn bg-blue-600 hover:bg-blue-500" onClick={() => void onSubmit()} disabled={saving}>
+                  <button className="btn bg-[var(--primary)] hover:bg-[var(--primary-hover)]" onClick={() => void onSubmit()} disabled={saving}>
                     {saving ? "Saving..." : drawerMode === "create" ? "Create limit" : "Save changes"}
                   </button>
-                  <button className="btn-secondary border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800" onClick={() => setDrawerOpen(false)} disabled={saving}>
+                  <button className="btn-secondary border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-subtle)]" onClick={() => setDrawerOpen(false)} disabled={saving}>
                     Cancel
                   </button>
                 </div>
@@ -783,12 +783,12 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
             )}
           </div>
 
-          <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900/70 p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Unsupported for now</h3>
-            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-              <li>CPU usage thresholds are not offered because the current agent/backend do not store CPU metrics.</li>
-              <li>Memory usage thresholds are not offered because no memory metrics pipeline exists yet.</li>
-              <li>Pod status distribution is dashboard-visible, but it is inventory-only and not exposed as a limit type.</li>
+          <div className="rounded-3xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-elevated)] p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">Unsupported for now</h3>
+            <ul className="mt-3 space-y-2 text-sm text-[var(--text-muted)]">
+              <li>CPU usage thresholds are not available yet.</li>
+              <li>Memory usage thresholds are not available yet.</li>
+              <li>Pod status is visible in the dashboard, but it is not a limit type yet.</li>
             </ul>
           </div>
         </div>

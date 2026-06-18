@@ -18,7 +18,7 @@ export default function DashboardPage() {
       <div>
         <p className="eyebrow">Operations overview</p>
         <h1 className="section-title mt-2">Dashboard</h1>
-        <p className="section-copy mt-2">Review cluster coverage, ingestion status, and the next onboarding step for your organization.</p>
+        <p className="section-copy mt-2">Review cluster coverage and the next step for your workspace.</p>
       </div>
       {error && <div className="card border-[var(--danger-bg)] text-[var(--danger-text)]">{error}</div>}
       <div className="grid gap-4 md:grid-cols-3">
@@ -39,10 +39,22 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+      <div className="panel-subtle p-5">
+        <p className="eyebrow">Next step</p>
+        <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text)]">Get a cluster connected</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">Generate a key, prepare the values file, and run the install command when you’re ready.</p>
+          </div>
+          <Link className="btn inline-flex" href="/dashboard/install-agent">
+            Start setup
+          </Link>
+        </div>
+      </div>
       {clusters && clusters.length === 0 && (
         <div className="card">
           <h2 className="text-xl font-semibold">No clusters connected yet</h2>
-          <p className="mt-2 section-copy">Create an agent key, prepare your Helm values, and install the collector to register the first cluster.</p>
+          <p className="mt-2 section-copy">Create an agent key and connect your first cluster.</p>
           <Link className="btn mt-4 inline-block" href="/dashboard/install-agent">
             Install agent
           </Link>

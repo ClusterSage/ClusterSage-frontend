@@ -39,9 +39,9 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
           <BrandLogo textClassName="text-xl" />
         </Link>
         <div className="panel mt-6 p-4">
-          <p className="eyebrow">Selected cluster</p>
+          <p className="eyebrow">Current cluster</p>
           <h2 className="mt-3 break-words text-lg font-semibold text-[var(--text)]">{cluster?.name || "Loading cluster..."}</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">{cluster?.provider || "Kubernetes cluster"}</p>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">{cluster?.provider || "Cluster"}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className={statusTone}>
               {cluster?.status || "loading"}
@@ -74,7 +74,7 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
         <div className="mt-8 flex items-center gap-3">
           <ThemeToggle />
           <div className="panel-subtle flex-1 px-3 py-2 text-sm text-[var(--text-muted)]">
-            Investigate incidents, limits, and AI guidance without leaving cluster context.
+            Keep investigations, limits, and follow-up actions in one place.
           </div>
         </div>
       </aside>
@@ -83,9 +83,9 @@ export function ClusterShell({ clusterId, children }: { clusterId: string; child
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <Link href="/dashboard" className="text-sm font-medium text-[var(--primary)] hover:opacity-80">
-                Back to Onboarding
+                Back to workspace
               </Link>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">Cluster operations workspace</p>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">Cluster details</p>
             </div>
             <div className="text-sm text-[var(--text-muted)]">
               {cluster?.name ? `Working in ${cluster.name}` : "Loading cluster context..."}

@@ -21,7 +21,6 @@ export default function SettingsPage() {
         <h2 className="text-xl font-semibold">Account</h2>
         <p className="mt-3 text-sm muted">Email: {user?.email || "Loading..."}</p>
         <p className="text-sm muted">Role: {user?.role || ""}</p>
-        <p className="text-sm muted">Organization ID: {user?.organization_id || ""}</p>
       </div>
     </div>
   );

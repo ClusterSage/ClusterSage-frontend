@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "ClusterSage",
-  description: "Operational visibility for Kubernetes clusters, incidents, and guided remediation.",
+  description: "Cluster activity, incidents, and next steps in one workspace.",
 };
 
 const themeInitScript = `
