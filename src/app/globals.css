@@ -313,7 +313,7 @@ body {
       linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0)),
       var(--bg-elevated);
     box-shadow: var(--shadow-sm);
-    @apply rounded-[14px] p-5 transition-colors duration-200;
+    @apply rounded-[14px] p-4 sm:p-5 lg:p-6 transition-colors duration-200;
   }
 
   .dashboard-panel-eyebrow {
@@ -328,7 +328,7 @@ body {
 
   .dashboard-panel-subtitle {
     color: var(--text-soft);
-    @apply mt-1 text-[13px] leading-5;
+    @apply mt-1 text-[12px] leading-5 sm:text-[13px];
   }
 
   .dashboard-metric-card {
@@ -337,7 +337,7 @@ body {
       linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
       var(--bg-elevated);
     box-shadow: var(--shadow-sm);
-    @apply rounded-[14px] p-[18px] transition-colors duration-200;
+    @apply min-h-[128px] rounded-[14px] p-4 sm:p-[18px] lg:p-5 transition-colors duration-200;
   }
 
   .dashboard-metric-icon {
@@ -348,7 +348,7 @@ body {
 
   .dashboard-metric-label {
     color: var(--text-soft);
-    @apply text-[12px] font-medium;
+    @apply text-[11px] font-medium uppercase tracking-[0.14em];
   }
 
   .dashboard-metric-trend-empty {
@@ -364,7 +364,7 @@ body {
       linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
       var(--bg-elevated);
     box-shadow: var(--shadow-sm);
-    @apply rounded-[14px] px-5 py-5 transition-colors duration-200;
+    @apply rounded-[14px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 transition-colors duration-200;
   }
 
   .dashboard-shell-meta {
