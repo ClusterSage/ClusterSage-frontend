@@ -1,0 +1,78 @@
+name: Frontend PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run typecheck
+        run: npm run typecheck --if-present
+
+      - name: Run tests
+        run: npm run test --if-present
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Validate security scan configuration
+        if: github.event.pull_request.head.repo.fork == false
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -n "${{ secrets.SONAR_TOKEN }}" ] || { echo "Missing SONAR_TOKEN secret."; exit 1; }
+          [ -n "${{ secrets.SONAR_HOST_URL }}" ] || { echo "Missing SONAR_HOST_URL secret."; exit 1; }
+          [ -n "${{ secrets.SNYK_TOKEN }}" ] || { echo "Missing SNYK_TOKEN secret."; exit 1; }
+
+      - name: SonarQube scan
+        if: github.event.pull_request.head.repo.fork == false
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
+            -Dsonar.projectName=${{ github.event.repository.name }}
+            -Dsonar.sources=src
+
+      - name: Install Snyk CLI
+        if: github.event.pull_request.head.repo.fork == false
+        uses: snyk/actions/setup@master
+
+      - name: Run Snyk dependency scan
+        if: github.event.pull_request.head.repo.fork == false
+        shell: bash
+        run: snyk test --severity-threshold=high --file=package.json
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Skip security scans on fork pull requests
+        if: github.event.pull_request.head.repo.fork == true
+        run: echo "Skipping SonarQube and Snyk because GitHub does not expose secrets to forked pull requests."
