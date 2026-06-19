@@ -159,6 +159,23 @@ function buildDefaults(metric: AlertLimitMetricType): FormState {
   };
 }
 
+function LimitStat({
+  label,
+  value,
+  toneClass = "text-[var(--text)]",
+}: {
+  label: string;
+  value: string | number;
+  toneClass?: string;
+}) {
+  return (
+    <div className="dashboard-metric-card p-4">
+      <p className="dashboard-metric-label">{label}</p>
+      <p className={`mt-2 text-2xl font-semibold tracking-tight ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
+
 function buildFormFromLimit(limit: AlertLimit): FormState {
   return {
     name: limit.name,
@@ -436,27 +453,15 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
       {error && <div className="rounded-3xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-[var(--danger-text)]">{error}</div>}
 
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-          <p className="text-sm text-[var(--text-muted)]">Total limits</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--text)]">{summary.total}</p>
-        </div>
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-          <p className="text-sm text-[var(--text-muted)]">Enabled</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--success-text)]">{summary.enabled}</p>
-        </div>
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-          <p className="text-sm text-[var(--text-muted)]">Email notifications</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--primary)]">{summary.emailEnabled}</p>
-        </div>
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-          <p className="text-sm text-[var(--text-muted)]">Triggered historically</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--warning-text)]">{summary.triggered}</p>
-        </div>
+        <LimitStat label="Total limits" value={summary.total} />
+        <LimitStat label="Enabled" value={summary.enabled} toneClass="text-[var(--success-text)]" />
+        <LimitStat label="Email notifications" value={summary.emailEnabled} toneClass="text-[var(--primary)]" />
+        <LimitStat label="Triggered historically" value={summary.triggered} toneClass="text-[var(--warning-text)]" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.9fr)]">
         <div className="space-y-4">
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+          <div className="dashboard-panel">
             <h2 className="text-lg font-semibold text-[var(--text)]">Supported signals</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {metricOptions.map(([metric, config]) => (
@@ -475,7 +480,7 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
             </div>
           </div>
 
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)]">
+          <div className="dashboard-panel p-0">
             <div className="border-b border-[var(--border)] px-4 py-4">
               <h2 className="text-lg font-semibold text-[var(--text)]">Configured limits</h2>
             </div>
@@ -546,7 +551,7 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
             </div>
           </div>
 
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)]">
+          <div className="dashboard-panel p-0">
             <div className="border-b border-[var(--border)] px-4 py-4">
               <h2 className="text-lg font-semibold text-[var(--text)]">Trigger history</h2>
               <p className="mt-1 text-sm text-[var(--text-muted)]">Recent trigger history appears here.</p>
@@ -575,7 +580,7 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5">
+          <div className="dashboard-panel">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary)]">{drawerMode === "create" ? "Create limit" : "Edit limit"}</p>
@@ -785,7 +790,7 @@ export function ClusterLimitsView({ clusterId, requestedMetric }: { clusterId: s
             )}
           </div>
 
-          <div className="rounded-3xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-elevated)] p-5">
+          <div className="dashboard-panel border-dashed">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">Unsupported for now</h3>
             <ul className="mt-3 space-y-2 text-sm text-[var(--text-muted)]">
               <li>CPU usage thresholds are not available yet.</li>

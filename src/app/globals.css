@@ -4,23 +4,23 @@
 
 :root {
   color-scheme: light;
-  --bg: #f3f7fc;
+  --bg: #f6f8fb;
   --bg-elevated: #ffffff;
-  --bg-subtle: #e9f0f8;
-  --bg-strong: #dce8f6;
+  --bg-subtle: #f0f5fb;
+  --bg-strong: #e4edf8;
   --sidebar: rgba(255, 255, 255, 0.92);
   --topbar: rgba(255, 255, 255, 0.76);
-  --border: rgba(146, 173, 201, 0.34);
-  --border-strong: rgba(88, 122, 166, 0.26);
-  --text: #10243f;
-  --text-muted: #4f6685;
-  --text-soft: #7388a3;
+  --border: #e2e8f0;
+  --border-strong: rgba(120, 147, 183, 0.34);
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-soft: #64748b;
   --primary: #1f6fff;
   --primary-hover: #1559d6;
   --primary-soft: rgba(31, 111, 255, 0.1);
   --primary-ring: rgba(31, 111, 255, 0.22);
-  --shadow-sm: 0 12px 28px rgba(17, 46, 87, 0.06);
-  --shadow-md: 0 20px 42px rgba(17, 46, 87, 0.09);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 1px 2px rgba(15, 23, 42, 0.03), 0 18px 40px rgba(15, 23, 42, 0.08);
   --success-bg: rgba(22, 163, 74, 0.12);
   --success-text: #166534;
   --warning-bg: rgba(245, 158, 11, 0.16);
@@ -41,23 +41,23 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #08111f;
-  --bg-elevated: #0f1b2d;
-  --bg-subtle: #142338;
-  --bg-strong: #182b44;
-  --sidebar: rgba(10, 19, 33, 0.92);
-  --topbar: rgba(10, 19, 33, 0.78);
-  --border: rgba(109, 142, 181, 0.22);
-  --border-strong: rgba(132, 169, 215, 0.28);
-  --text: #f2f7ff;
+  --bg: #071426;
+  --bg-elevated: #0e1b2e;
+  --bg-subtle: #0a1728;
+  --bg-strong: #10233a;
+  --sidebar: rgba(7, 18, 35, 0.94);
+  --topbar: rgba(8, 24, 39, 0.82);
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: #1e344e;
+  --text: #f8fafc;
   --text-muted: #b6c6dd;
   --text-soft: #8ea4c1;
   --primary: #63a2ff;
   --primary-hover: #88b8ff;
   --primary-soft: rgba(99, 162, 255, 0.16);
   --primary-ring: rgba(99, 162, 255, 0.28);
-  --shadow-sm: 0 18px 36px rgba(0, 0, 0, 0.28);
-  --shadow-md: 0 28px 54px rgba(0, 0, 0, 0.34);
+  --shadow-sm: none;
+  --shadow-md: none;
   --success-bg: rgba(52, 211, 153, 0.14);
   --success-text: #a7f3d0;
   --warning-bg: rgba(251, 191, 36, 0.18);
@@ -83,8 +83,8 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(56, 139, 253, 0.07), transparent 24%),
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 20%),
+    radial-gradient(circle at top left, rgba(56, 139, 253, 0.05), transparent 24%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.04), transparent 20%),
     var(--bg);
   color: var(--text);
   text-rendering: optimizeLegibility;
@@ -313,17 +313,22 @@ body {
       linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0)),
       var(--bg-elevated);
     box-shadow: var(--shadow-sm);
-    @apply rounded-2xl p-5 transition-colors duration-200;
+    @apply rounded-[14px] p-5 transition-colors duration-200;
+  }
+
+  .dashboard-panel-eyebrow {
+    color: var(--text-soft);
+    @apply mb-2 text-[11px] font-semibold uppercase tracking-[0.18em];
   }
 
   .dashboard-panel-title {
     color: var(--text);
-    @apply text-lg font-semibold tracking-tight;
+    @apply text-[15px] font-semibold tracking-tight;
   }
 
   .dashboard-panel-subtitle {
     color: var(--text-soft);
-    @apply mt-1 text-sm;
+    @apply mt-1 text-[13px] leading-5;
   }
 
   .dashboard-metric-card {
@@ -332,18 +337,25 @@ body {
       linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
       var(--bg-elevated);
     box-shadow: var(--shadow-sm);
-    @apply rounded-2xl p-5 transition-colors duration-200;
+    @apply rounded-[14px] p-[18px] transition-colors duration-200;
   }
 
   .dashboard-metric-icon {
     border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
     background: color-mix(in srgb, currentColor 12%, transparent);
-    @apply grid h-12 w-12 shrink-0 place-items-center rounded-2xl;
+    @apply grid h-11 w-11 shrink-0 place-items-center rounded-xl;
   }
 
   .dashboard-metric-label {
     color: var(--text-soft);
-    @apply text-sm font-medium;
+    @apply text-[12px] font-medium;
+  }
+
+  .dashboard-metric-trend-empty {
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg-subtle) 82%, transparent);
+    color: var(--text-soft);
+    @apply items-center justify-center p-2.5;
   }
 
   .dashboard-shell-header {
@@ -352,12 +364,25 @@ body {
       linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
       var(--bg-elevated);
     box-shadow: var(--shadow-sm);
-    @apply rounded-2xl px-5 py-5 transition-colors duration-200;
+    @apply rounded-[14px] px-5 py-5 transition-colors duration-200;
   }
 
   .dashboard-shell-meta {
     color: var(--text-soft);
     @apply text-xs font-semibold uppercase tracking-[0.2em];
+  }
+
+  .dashboard-unavailable-state {
+    border: 1px dashed var(--border-strong);
+    background: color-mix(in srgb, var(--bg-subtle) 72%, transparent);
+    @apply flex items-start gap-3 rounded-[12px] p-4;
+  }
+
+  .dashboard-unavailable-icon {
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    background: var(--bg-elevated);
+    @apply grid h-8 w-8 shrink-0 place-items-center rounded-lg;
   }
 
   .theme-transition {

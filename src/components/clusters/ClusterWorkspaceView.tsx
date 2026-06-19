@@ -44,6 +44,24 @@ function questionIntentLabel(query: AIClusterQuery | null) {
   return typeof parsed.intent === "string" ? parsed.intent : "unsupported";
 }
 
+function WorkspaceStat({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+}) {
+  return (
+    <div className="dashboard-metric-card p-4">
+      <p className="dashboard-metric-label">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">{value}</p>
+      <p className="mt-2 text-xs text-[var(--text-soft)]">{detail}</p>
+    </div>
+  );
+}
+
 export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; view: ClusterView }) {
   const [cluster, setCluster] = useState<Cluster | null>(null);
   const [resources, setResources] = useState<ResourceSummary[] | null>(null);
@@ -219,21 +237,9 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="dashboard-metric-card p-4">
-                <p className="dashboard-metric-label">Shown</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">{filteredResources.length}</p>
-                <p className="mt-2 text-xs text-[var(--text-soft)]">Current filtered rows</p>
-              </div>
-              <div className="dashboard-metric-card p-4">
-                <p className="dashboard-metric-label">Kinds</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">{kinds.length - 1}</p>
-                <p className="mt-2 text-xs text-[var(--text-soft)]">Visible resource kinds</p>
-              </div>
-              <div className="dashboard-metric-card p-4">
-                <p className="dashboard-metric-label">Cluster</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">{cluster.name}</p>
-                <p className="mt-2 text-xs text-[var(--text-soft)]">{cluster.provider}</p>
-              </div>
+              <WorkspaceStat label="Shown" value={filteredResources.length} detail="Current filtered rows" />
+              <WorkspaceStat label="Kinds" value={kinds.length - 1} detail="Visible resource kinds" />
+              <WorkspaceStat label="Cluster" value={cluster.name} detail={cluster.provider} />
             </div>
           </div>
         </section>
@@ -259,7 +265,7 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
             <p className="mt-2">Resources will appear here after the cluster connects.</p>
           </div>
         )}
-        <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-sm">
+        <div className="dashboard-panel overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-[var(--border)] text-sm text-[var(--text)]">
               <thead className="bg-[var(--bg-subtle)] text-left text-xs uppercase tracking-wide text-[var(--text-soft)]">
@@ -315,10 +321,10 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
           </div>
         </section>
         <div className="grid gap-4 md:grid-cols-4">
-          <div className="dashboard-metric-card p-4"><p className="dashboard-metric-label">Critical</p><p className="mt-2 text-2xl font-semibold text-red-400">{incidentSummary.critical}</p></div>
-          <div className="dashboard-metric-card p-4"><p className="dashboard-metric-label">Major</p><p className="mt-2 text-2xl font-semibold text-amber-400">{incidentSummary.major}</p></div>
-          <div className="dashboard-metric-card p-4"><p className="dashboard-metric-label">Minor</p><p className="mt-2 text-2xl font-semibold text-[var(--primary)]">{incidentSummary.minor}</p></div>
-          <div className="dashboard-metric-card p-4"><p className="dashboard-metric-label">Open</p><p className="mt-2 text-2xl font-semibold text-[var(--text)]">{incidentSummary.open}</p></div>
+          <WorkspaceStat label="Critical" value={incidentSummary.critical} detail="Highest-severity rows" />
+          <WorkspaceStat label="Major" value={incidentSummary.major} detail="Degraded issue rows" />
+          <WorkspaceStat label="Minor" value={incidentSummary.minor} detail="Lower-severity rows" />
+          <WorkspaceStat label="Open" value={incidentSummary.open} detail="Currently open incidents" />
         </div>
         <section className="dashboard-panel">
           <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
@@ -334,7 +340,7 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
         {incidentLoading && <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-[var(--text-muted)]">Loading incidents...</div>}
         {!incidentLoading && incidents?.length === 0 && <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-[var(--text-muted)]"><h2 className="text-lg font-semibold text-[var(--text)]">No incidents detected for this cluster.</h2><p className="mt-2">Recent cluster issues will appear here.</p></div>}
         {!incidentLoading && incidents && incidents.length > 0 && <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-sm text-[var(--text-muted)]">
+          <div className="dashboard-panel flex items-center justify-between gap-3 px-4 py-3 text-sm text-[var(--text-muted)]">
             <p>Pick an incident to inspect details, evidence context, and the linked resource.</p>
             <p>{filteredIncidents.length} shown</p>
           </div>
@@ -430,8 +436,9 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {supportedClusterIntents.map((item) => (
           <div key={item} className="dashboard-metric-card p-4">
-            <p className="text-sm font-medium text-[var(--text)]">{item}</p>
-            <p className="mt-2 text-xs text-[var(--text-soft)]">Answers are grounded in the incidents, resources, logs, and event summaries already collected for this cluster.</p>
+            <p className="dashboard-metric-label">Supported</p>
+            <p className="mt-2 text-sm font-medium leading-6 text-[var(--text)]">{item}</p>
+            <p className="mt-2 text-xs text-[var(--text-soft)]">Grounded in incidents, resources, logs, and event summaries already collected for this cluster.</p>
           </div>
         ))}
       </div>
@@ -445,7 +452,7 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
         </div>
       </div>
       {clusterQueryError && <div className="rounded-2xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-[var(--danger-text)]">{clusterQueryError}</div>}
-      {clusterQueryResult && <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5">
+      {clusterQueryResult && <div className="dashboard-panel">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-blue-500/15 px-2.5 py-1 text-xs font-semibold text-[var(--primary)]">{questionIntentLabel(clusterQueryResult)}</span>
           <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)]">{clusterQueryResult.ai_model || "ClusterSage"}</span>

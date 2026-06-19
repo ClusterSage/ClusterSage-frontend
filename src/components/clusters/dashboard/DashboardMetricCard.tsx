@@ -13,6 +13,21 @@ function buildLinePath(points: number[]) {
     .join(" ");
 }
 
+function UnavailableTrend({ label = "Historical data unavailable" }: { label?: string }) {
+  return (
+    <div
+      className="dashboard-metric-trend-empty hidden h-14 w-[88px] shrink-0 rounded-xl md:flex"
+      role="img"
+      aria-label={label}
+      title={label}
+    >
+      <svg viewBox="0 0 88 56" className="h-full w-full">
+        <path d="M8 38 C18 34, 26 42, 36 37 S56 32, 66 36 S76 40, 80 35" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="4 4" />
+      </svg>
+    </div>
+  );
+}
+
 export function DashboardMetricCard({
   icon,
   label,
@@ -21,6 +36,7 @@ export function DashboardMetricCard({
   accent = "var(--primary)",
   footer,
   trend,
+  trendLabel,
 }: {
   icon: ReactNode;
   label: string;
@@ -29,6 +45,7 @@ export function DashboardMetricCard({
   accent?: string;
   footer?: ReactNode;
   trend?: number[];
+  trendLabel?: string;
 }) {
   const path = trend?.length ? buildLinePath(trend) : "";
 
@@ -46,12 +63,14 @@ export function DashboardMetricCard({
           </div>
         </div>
         {path ? (
-          <div className="hidden h-12 w-16 shrink-0 md:block">
+          <div className="hidden h-14 w-[88px] shrink-0 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)]/45 p-2.5 text-[var(--text-soft)] md:block" role="img" aria-label={trendLabel || `${label} trend`}>
             <svg viewBox="0 0 60 36" className="h-full w-full">
               <path d={path} fill="none" stroke={accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-        ) : null}
+        ) : (
+          <UnavailableTrend label={trendLabel || `${label} historical data unavailable`} />
+        )}
       </div>
       {footer ? <div className="mt-4 border-t border-[var(--border)] pt-3">{footer}</div> : null}
     </section>

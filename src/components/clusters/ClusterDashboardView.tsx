@@ -6,8 +6,10 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { DashboardMetricCard } from "@/components/clusters/dashboard/DashboardMetricCard";
 import { DashboardPanel as Panel } from "@/components/clusters/dashboard/DashboardPanel";
+import { DashboardUnavailableState } from "@/components/clusters/dashboard/DashboardUnavailableState";
 import type {
   AIIncident,
+  AlertEvent,
   Cluster,
   ClusterMetricFilterCatalog,
   ClusterMetricLatest,
@@ -68,9 +70,16 @@ function toneHex(tone: CountTone) {
   }
 }
 
-function iconFor(kind: "cluster" | "nodes" | "workloads" | "incidents" | "pods") {
+function iconFor(kind: "alerts" | "cluster" | "nodes" | "workloads" | "incidents" | "pods") {
   const stroke = "currentColor";
   switch (kind) {
+    case "alerts":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke={stroke} strokeWidth="1.8">
+          <path d="M15 17H5.5a1.5 1.5 0 0 1-1.2-2.4L6 12.5V10a6 6 0 1 1 12 0v2.5l1.7 2.1A1.5 1.5 0 0 1 18.5 17H15" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M9.5 19a2.5 2.5 0 0 0 5 0" strokeLinecap="round" />
+        </svg>
+      );
     case "nodes":
       return (
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke={stroke} strokeWidth="1.8">
@@ -113,13 +122,21 @@ function iconFor(kind: "cluster" | "nodes" | "workloads" | "incidents" | "pods")
 }
 
 function buildActivityBuckets(incidents: AIIncident[], bucketCount: number, minutes: number) {
+  return buildTimestampBuckets(
+    incidents.map((incident) => incident.last_seen_at),
+    bucketCount,
+    minutes,
+  );
+}
+
+function buildTimestampBuckets(values: (string | null | undefined)[], bucketCount: number, minutes: number) {
   const now = Date.now();
   const windowMs = minutes * 60 * 1000;
   const bucketMs = windowMs / bucketCount;
   const buckets = Array.from({ length: bucketCount }, () => 0);
 
-  for (const incident of incidents) {
-    const ts = new Date(incident.last_seen_at).getTime();
+  for (const value of values) {
+    const ts = new Date(value || "").getTime();
     if (!Number.isFinite(ts) || ts < now - windowMs) continue;
     const index = Math.min(bucketCount - 1, Math.max(0, Math.floor((ts - (now - windowMs)) / bucketMs)));
     buckets[index] += 1;
@@ -225,6 +242,7 @@ function LineMetricPanel({ spec, data }: { spec: MetricSpec; data?: ClusterMetri
 
   return (
     <Panel
+      eyebrow="Telemetry"
       title={spec.title}
       subtitle={spec.subtitle}
       right={<span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${toneClass(spec.tone)}`}>{data?.unit || "n/a"}</span>}
@@ -281,6 +299,7 @@ function BreakdownPanel({ spec, data }: { spec: MetricSpec; data?: ClusterMetric
   const max = Math.max(...breakdown.map((item) => item.value), 1);
   return (
     <Panel
+      eyebrow="Capacity"
       title={spec.title}
       subtitle={spec.subtitle}
       right={<span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${toneClass(spec.tone)}`}>{shortTimestamp(data?.collected_at)}</span>}
@@ -354,7 +373,7 @@ function NamespaceTable({
   }, [resources, incidents, namespaceFilter]);
 
   return (
-    <Panel title="Namespace resource status" subtitle="Snapshot-backed operational density by namespace." right={right}>
+    <Panel eyebrow="Namespaces" title="Namespace resource status" subtitle="Snapshot-backed operational density by namespace." right={right}>
       {!rows.length ? (
         <p className="text-sm text-[var(--text-muted)]">No namespaces match the current filter selection.</p>
       ) : (
@@ -444,7 +463,7 @@ function WorkloadTable({
   }, [resources, incidents, namespaceFilter, workloadFilter]);
 
   return (
-    <Panel title="Workload health" subtitle="Snapshot and incident-backed workload drilldown." right={right}>
+    <Panel eyebrow="Workloads" title="Workload health" subtitle="Snapshot and incident-backed workload drilldown." right={right}>
       {!rows.length ? (
         <p className="text-sm text-[var(--text-muted)]">No workloads match the current filter selection.</p>
       ) : (
@@ -488,11 +507,39 @@ function formatRelativeTime(value: string) {
   return `${days}d ago`;
 }
 
+function severityChipClass(severity: AIIncident["severity"]) {
+  if (severity === "critical") return "status-chip-critical";
+  if (severity === "major") return "status-chip-major";
+  return "status-chip-minor";
+}
+
 function insightTagForIncident(incident: AIIncident) {
   if (/oom|capacity|memory|disk/i.test(incident.incident_type) || /memory|disk/i.test(incident.title)) return "Prediction";
   if (/restart|crash|loop/i.test(incident.incident_type) || /restart|crash|loop/i.test(incident.title)) return "Investigation";
   if (incident.severity === "critical") return "Remediation";
   return "Recommendation";
+}
+
+function MiddleStat({
+  label,
+  value,
+  detail,
+  tone = "slate",
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone?: CountTone;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 px-3 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
+      <p className="mt-2 text-xl font-semibold" style={{ color: toneHex(tone) }}>
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-[var(--text-soft)]">{detail}</p>
+    </div>
+  );
 }
 
 function healthToneLabel(kind: "healthy" | "warning" | "critical") {
@@ -565,7 +612,7 @@ function RollupList({
   items: ClusterMetricRollupItem[];
 }) {
   return (
-    <Panel title={title} subtitle={subtitle}>
+    <Panel eyebrow="Top consumers" title={title} subtitle={subtitle}>
       {!items.length ? (
         <p className="text-sm text-[var(--text-muted)]">No runtime samples are available for this panel yet.</p>
       ) : (
@@ -624,6 +671,7 @@ export function ClusterDashboardView({
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [latestMetrics, setLatestMetrics] = useState<Record<string, ClusterMetricLatest>>({});
   const [timeseriesMetrics, setTimeseriesMetrics] = useState<Record<string, ClusterMetricTimeseries>>({});
+  const [alertEvents, setAlertEvents] = useState<AlertEvent[]>([]);
 
   useEffect(() => {
     api<ClusterMetricFilterCatalog>(`/api/clusters/${clusterId}/metrics/catalog`)
@@ -634,6 +682,16 @@ export function ClusterDashboardView({
       .catch((err) => {
         setCatalog(null);
         setCatalogError(err instanceof Error ? err.message : "Failed to load metric catalog");
+      });
+  }, [clusterId, refreshNonce]);
+
+  useEffect(() => {
+    api<AlertEvent[]>(`/api/clusters/${clusterId}/alert-events`)
+      .then((data) => {
+        setAlertEvents(data);
+      })
+      .catch(() => {
+        setAlertEvents([]);
       });
   }, [clusterId, refreshNonce]);
 
@@ -725,9 +783,21 @@ export function ClusterDashboardView({
     [incidents, selectedWindowOption.value],
   );
   const topNodeTrend = metricsOverview?.top_nodes_by_cpu.map((item) => item.value) || [];
-  const topPodTrend = metricsOverview?.top_pods_by_cpu.map((item) => item.value) || [];
   const majorIncidents = incidents.filter((item) => item.severity === "major" && item.status === "open").length;
   const minorIncidents = incidents.filter((item) => item.severity === "minor" && item.status === "open").length;
+  const alertEventsInWindow = useMemo(() => {
+    const windowMs = Number(selectedWindowOption.value) * 60 * 1000;
+    const threshold = Date.now() - windowMs;
+    return alertEvents.filter((event) => {
+      const ts = new Date(event.triggered_at).getTime();
+      return Number.isFinite(ts) && ts >= threshold;
+    });
+  }, [alertEvents, selectedWindowOption.value]);
+  const alertActivity = useMemo(
+    () => buildTimestampBuckets(alertEventsInWindow.map((event) => event.triggered_at), 8, Number(selectedWindowOption.value)),
+    [alertEventsInWindow, selectedWindowOption.value],
+  );
+  const latestAlertAt = alertEvents[0]?.triggered_at;
   const recentIncidents = useMemo(
     () =>
       [...incidents]
@@ -760,6 +830,16 @@ export function ClusterDashboardView({
     selectedWorkload !== "All"
       ? "Workload filter currently affects workload and snapshot panels. Pod/node metrics remain scoped by real metric dimensions only."
       : "";
+  const topBarClusterState = connectionBadge ? "Connected" : cluster.status || "Unknown";
+  const topBarClusterHelper = metricsOverview?.collected_at
+    ? `Runtime samples received ${shortTimestamp(metricsOverview.collected_at)}`
+    : "No runtime samples yet";
+  const topBarWorkloadHelper = activeWorkloadCount
+    ? `${activeWorkloadCount} workload${activeWorkloadCount === 1 ? "" : "s"} currently tied to open incidents`
+    : "Inventory snapshot only";
+  const topBarAlertHelper = alertEventsInWindow.length
+    ? `${alertEventsInWindow.length} triggered in ${selectedWindowOption.label.toLowerCase()}`
+    : `No alert events in ${selectedWindowOption.label.toLowerCase()}`;
 
   return (
     <div className="space-y-5 text-[var(--text)]">
@@ -772,20 +852,28 @@ export function ClusterDashboardView({
               Real-time summary of this Kubernetes cluster using resource inventory, incidents, and telemetry already collected by ClusterSage.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 px-3 py-2 text-sm text-[var(--text-muted)]">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Range</span>
-              <select className="bg-transparent text-sm text-[var(--text)]" value={selectedWindow} onChange={(event) => setSelectedWindow(event.target.value)} aria-label="Select dashboard time range">
-                {timeRangeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className="btn-secondary h-10 rounded-xl px-4" onClick={() => setRefreshNonce((value) => value + 1)}>
-              {loading ? "Refreshing..." : "Refresh"}
-            </button>
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-[var(--text-soft)]">
+              <span className={`rounded-full px-2.5 py-1 ${connectionBadge ? "bg-[var(--success-bg)] text-[var(--success-text)]" : "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>
+                {topBarClusterState}
+              </span>
+              <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1">Snapshot + telemetry</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <label className="flex h-10 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 px-3 text-sm text-[var(--text-muted)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Range</span>
+                <select className="bg-transparent text-sm text-[var(--text)]" value={selectedWindow} onChange={(event) => setSelectedWindow(event.target.value)} aria-label="Select dashboard time range">
+                  {timeRangeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className="btn-secondary h-10 rounded-xl px-4" onClick={() => setRefreshNonce((value) => value + 1)}>
+                {loading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -793,9 +881,9 @@ export function ClusterDashboardView({
       <section className="grid gap-4 xl:grid-cols-5">
         <DashboardMetricCard
           icon={iconFor("cluster")}
-          label="Cluster"
-          value={connectionBadge ? "Live" : cluster.status}
-          helper={runtimeCoverage}
+          label="Cluster status"
+          value={topBarClusterState}
+          helper={topBarClusterHelper}
           accent="#1f6fff"
           footer={<p className="text-xs text-[var(--text-soft)]">{cluster.provider || "Kubernetes cluster"}{cluster.agent_version ? ` | Agent ${cluster.agent_version}` : ""}</p>}
         />
@@ -806,33 +894,33 @@ export function ClusterDashboardView({
           helper={catalog?.collected_at ? `${catalog.nodes.length || nodeCount} discovered in telemetry` : "Node scope from inventory and metrics"}
           accent="#8b5cf6"
           trend={topNodeTrend.length > 1 ? topNodeTrend : undefined}
-          footer={<p className="text-xs text-[var(--text-soft)]">{metricsOverview?.top_nodes_by_cpu.length ? "Mini-line uses current node CPU spread." : "Waiting for node-level runtime samples."}</p>}
+          footer={<p className="text-xs text-[var(--text-soft)]">{metricsOverview?.top_nodes_by_cpu.length ? "Card sparkline reflects current node CPU spread." : "Waiting for node-level runtime samples."}</p>}
         />
         <DashboardMetricCard
           icon={iconFor("workloads")}
           label="Workloads"
           value={`${workloadCount}`}
-          helper={activeWorkloadCount ? `${activeWorkloadCount} workload${activeWorkloadCount === 1 ? "" : "s"} with open incidents` : "No workloads currently tied to open incidents"}
+          helper={topBarWorkloadHelper}
           accent="#10b981"
-          footer={<p className="text-xs text-[var(--text-soft)]">Deployments, StatefulSets, DaemonSets, Jobs, and CronJobs.</p>}
+          footer={<p className="text-xs text-[var(--text-soft)]">Deployments, StatefulSets, DaemonSets, Jobs, and CronJobs in the current snapshot.</p>}
         />
         <DashboardMetricCard
           icon={iconFor("incidents")}
           label="Incidents"
           value={`${openIncidents}`}
-          helper={criticalIncidents ? `${criticalIncidents} critical incident${criticalIncidents === 1 ? "" : "s"} in the current cluster view` : "No critical incidents open right now"}
+          helper={criticalIncidents ? `${criticalIncidents} critical${majorIncidents ? ` | ${majorIncidents} major` : ""}` : majorIncidents ? `${majorIncidents} major${minorIncidents ? ` | ${minorIncidents} minor` : ""}` : "No critical incidents open right now"}
           accent="#ef4444"
           trend={incidentActivity.some((value) => value > 0) ? incidentActivity : undefined}
           footer={<p className="text-xs text-[var(--text-soft)]">Activity trace covers {selectedWindowOption.label.toLowerCase()}.</p>}
         />
         <DashboardMetricCard
-          icon={iconFor("pods")}
-          label="Pods"
-          value={`${podCount}`}
-          helper={`${healthyPodCount} healthy${troubledPodCount ? ` | ${troubledPodCount} needing attention` : ""}`}
+          icon={iconFor("alerts")}
+          label="Alerts"
+          value={`${alertEventsInWindow.length}`}
+          helper={topBarAlertHelper}
           accent="#f59e0b"
-          trend={topPodTrend.length > 1 ? topPodTrend : undefined}
-          footer={<p className="text-xs text-[var(--text-soft)]">{metricsOverview?.top_pods_by_cpu.length ? "Mini-line uses live pod CPU spread." : "CPU distribution appears after metrics samples arrive."}</p>}
+          trend={alertActivity.some((value) => value > 0) ? alertActivity : undefined}
+          footer={<p className="text-xs text-[var(--text-soft)]">{latestAlertAt ? `Most recent trigger ${formatRelativeTime(latestAlertAt)}.` : "No alert triggers recorded yet."}</p>}
         />
       </section>
 
@@ -867,10 +955,12 @@ export function ClusterDashboardView({
       {metricsError ? <div className="rounded-xl border border-[var(--warning-bg)] bg-[var(--warning-bg)] p-4 text-[var(--warning-text)]">{metricsError}</div> : null}
       {workloadFilterNote ? <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-sm text-[var(--text-muted)]">{workloadFilterNote}</div> : null}
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1fr_1fr]">
+      <section className="grid gap-4 xl:grid-cols-[0.92fr_1fr_1fr]">
         <Panel
+          eyebrow="Health"
           title="Cluster health"
           subtitle="Derived from current pod states and open incidents in this cluster view."
+          className="min-h-[420px]"
           right={
             <div className="flex items-center gap-2">
               <Link href={`/dashboard/clusters/${clusterId}/limits?metric=resource_health`} className="btn-secondary h-9 rounded-xl px-3 text-xs">
@@ -883,37 +973,49 @@ export function ClusterDashboardView({
           }
         >
           {podCount === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">Health appears here after ClusterSage receives a resource snapshot for this cluster.</p>
+            <DashboardUnavailableState message="Health appears here after ClusterSage receives a resource snapshot for this cluster." />
           ) : (
-            <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-center">
-              <HealthDonut healthy={healthSummary.healthy} warning={healthSummary.warning} critical={healthSummary.critical} />
-              <div className="space-y-3">
-                {(["healthy", "warning", "critical"] as const).map((kind) => {
-                  const meta = healthToneLabel(kind);
-                  const value = healthSummary[kind];
-                  const total = Math.max(healthSummary.healthy + healthSummary.warning + healthSummary.critical, 1);
-                  const percent = Math.round((value / total) * 100);
-                  return (
-                    <div key={kind} className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: meta.color }} aria-hidden="true" />
-                        <span className="text-sm text-[var(--text-muted)]">{meta.label}</span>
+            <div className="space-y-4">
+              <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-center">
+                <HealthDonut healthy={healthSummary.healthy} warning={healthSummary.warning} critical={healthSummary.critical} />
+                <div className="space-y-3">
+                  {(["healthy", "warning", "critical"] as const).map((kind) => {
+                    const meta = healthToneLabel(kind);
+                    const value = healthSummary[kind];
+                    const total = Math.max(healthSummary.healthy + healthSummary.warning + healthSummary.critical, 1);
+                    const percent = Math.round((value / total) * 100);
+                    return (
+                      <div key={kind} className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 px-3 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: meta.color }} aria-hidden="true" />
+                            <span className="text-sm text-[var(--text-muted)]">{meta.label}</span>
+                          </div>
+                          <span className="text-sm font-medium text-[var(--text)]">{percent}%</span>
+                        </div>
+                        <p className="mt-2 text-lg font-semibold text-[var(--text)]">{value}</p>
                       </div>
-                      <span className="text-sm font-medium text-[var(--text)]">{percent}% ({value})</span>
-                    </div>
-                  );
-                })}
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3 text-sm text-[var(--text-muted)]">
-                  This summary stays transparent: healthy is based on ready/running pods, warning reflects degraded pod states and major incidents, and critical reflects open critical incidents.
+                    );
+                  })}
                 </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <MiddleStat label="Pods" value={`${podCount}`} detail={`${healthyPodCount} ready or running`} tone="emerald" />
+                <MiddleStat label="Incidents" value={`${openIncidents}`} detail={`${majorIncidents + criticalIncidents} elevated severity`} tone="amber" />
+                <MiddleStat label="Critical" value={`${criticalIncidents}`} detail="Open critical incidents" tone="red" />
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3 text-sm text-[var(--text-muted)]">
+                This summary stays transparent: healthy is based on ready or running pods, warning reflects degraded pod states plus open major incidents, and critical reflects open critical incidents.
               </div>
             </div>
           )}
         </Panel>
 
         <Panel
+          eyebrow="Incidents"
           title="Recent incidents"
           subtitle="Latest incident records already detected from the telemetry pipeline."
+          className="min-h-[420px]"
           right={
             <div className="flex items-center gap-2">
               <Link href={`/dashboard/clusters/${clusterId}/limits?metric=open_incidents`} className="btn-secondary h-9 rounded-xl px-3 text-xs">
@@ -926,11 +1028,16 @@ export function ClusterDashboardView({
           }
         >
           {!recentIncidents.length ? (
-            <p className="text-sm text-[var(--text-muted)]">No incidents detected for the selected cluster and time window.</p>
+            <DashboardUnavailableState message="No incidents detected for the selected cluster and time window." />
           ) : (
             <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <MiddleStat label="Open" value={`${openIncidents}`} detail="Current incident rows" tone="red" />
+                <MiddleStat label="Critical" value={`${criticalIncidents}`} detail="Need immediate attention" tone="red" />
+                <MiddleStat label="Major" value={`${majorIncidents}`} detail="Degraded or unstable" tone="amber" />
+              </div>
               {recentIncidents.map((incident) => {
-                const tone = incident.severity === "critical" ? "status-chip-critical" : incident.severity === "major" ? "status-chip-major" : "status-chip-minor";
+                const tone = severityChipClass(incident.severity);
                 const target = incident.resource_kind && incident.resource_name
                   ? resourceHref(clusterId, { kind: incident.resource_kind, namespace: incident.namespace || "_cluster", name: incident.resource_name })
                   : `/dashboard/clusters/${clusterId}/incidents`;
@@ -941,13 +1048,17 @@ export function ClusterDashboardView({
                         <div className="flex flex-wrap items-center gap-2">
                           <span className={`status-chip ${tone}`}>{incident.severity}</span>
                           <span className="text-xs text-[var(--text-soft)]">{incident.incident_type}</span>
+                          <span className="text-xs text-[var(--text-soft)]">{incident.status}</span>
                         </div>
                         <p className="mt-2 truncate text-sm font-medium text-[var(--text)]">{incident.title}</p>
                         <p className="mt-1 text-sm text-[var(--text-muted)]">
                           {incident.namespace || "cluster"}{incident.workload_name ? ` / ${incident.workload_name}` : incident.pod_name ? ` / ${incident.pod_name}` : ""}
                         </p>
                       </div>
-                      <span className="shrink-0 text-xs text-[var(--text-soft)]">{formatRelativeTime(incident.last_seen_at)}</span>
+                      <div className="shrink-0 text-right">
+                        <p className="text-xs text-[var(--text-soft)]">{formatRelativeTime(incident.last_seen_at)}</p>
+                        <p className="mt-2 text-xs text-[var(--text-soft)]">{incident.occurrence_count} hit{incident.occurrence_count === 1 ? "" : "s"}</p>
+                      </div>
                     </div>
                   </Link>
                 );
@@ -957,16 +1068,31 @@ export function ClusterDashboardView({
         </Panel>
 
         <Panel
+          eyebrow="AI"
           title="AI insights"
           subtitle="Existing AI-backed summaries tied to real incident records only."
+          className="min-h-[420px]"
           right={<Link href={`/dashboard/clusters/${clusterId}/ai`} className="text-sm font-medium text-[var(--primary)] hover:underline">Open AI</Link>}
         >
           {!aiInsightItems.length ? (
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
-              <p className="text-sm text-[var(--text-muted)]">AI insights will appear here after ClusterSage analyzes recent logs, incidents, and events for this cluster.</p>
-            </div>
+            <DashboardUnavailableState message="AI insights will appear here after ClusterSage analyzes recent logs, incidents, and events for this cluster." />
           ) : (
             <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <MiddleStat label="Insights" value={`${aiInsightItems.length}`} detail="Visible in this cluster view" tone="blue" />
+                <MiddleStat
+                  label="Critical"
+                  value={`${aiInsightItems.filter((item) => item.severity === "critical").length}`}
+                  detail="Attached to critical incidents"
+                  tone="red"
+                />
+                <MiddleStat
+                  label="Actionable"
+                  value={`${aiInsightItems.filter((item) => insightTagForIncident(item) !== "Prediction").length}`}
+                  detail="Recommendation or investigation"
+                  tone="emerald"
+                />
+              </div>
               {aiInsightItems.map((incident) => (
                 <div key={incident.id} className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 px-4 py-3">
                   <div className="flex items-start justify-between gap-3">
@@ -977,13 +1103,20 @@ export function ClusterDashboardView({
                         </svg>
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-[var(--text)]">{incident.title}</p>
-                        <p className="mt-1 text-sm text-[var(--text-muted)]">{incident.ai_summary}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`status-chip ${severityChipClass(incident.severity)}`}>{incident.severity}</span>
+                          <span className="text-xs text-[var(--text-soft)]">{incident.incident_type}</span>
+                        </div>
+                        <p className="mt-2 truncate text-sm font-medium text-[var(--text)]">{incident.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">{incident.ai_summary}</p>
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-medium text-[var(--primary)]">
-                      {insightTagForIncident(incident)}
-                    </span>
+                    <div className="shrink-0 text-right">
+                      <span className="rounded-full bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-medium text-[var(--primary)]">
+                        {insightTagForIncident(incident)}
+                      </span>
+                      <p className="mt-2 text-xs text-[var(--text-soft)]">{formatRelativeTime(incident.last_seen_at)}</p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -993,103 +1126,141 @@ export function ClusterDashboardView({
       </section>
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="dashboard-shell-meta">Runtime signals</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-[var(--text)]">Technical telemetry</h2>
-          </div>
-          <p className="max-w-2xl text-sm text-[var(--text-muted)]">
-            Live usage, network movement, and declared capacity from the metrics pipeline. Panels stay empty rather than inventing values.
-          </p>
-        </div>
-
-        <div className="grid gap-4 2xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="space-y-4">
-            <LineMetricPanel spec={lineMetricSpecs[0]} data={timeseriesMetrics.cpu_mcores} />
-            <LineMetricPanel spec={lineMetricSpecs[1]} data={timeseriesMetrics.memory_bytes} />
-            <div className="grid gap-4 xl:grid-cols-2">
-              <LineMetricPanel spec={lineMetricSpecs[2]} data={timeseriesMetrics.network_rx_bytes} />
-              <LineMetricPanel spec={lineMetricSpecs[3]} data={timeseriesMetrics.network_tx_bytes} />
+        <div className="dashboard-panel">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="dashboard-shell-meta">Runtime signals</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-[var(--text)]">Technical telemetry</h2>
             </div>
+            <p className="max-w-2xl text-sm text-[var(--text-muted)]">
+              Live usage, network movement, and declared capacity from the metrics pipeline. Panels stay empty rather than inventing values.
+            </p>
           </div>
 
-          <div className="space-y-4">
-            <Panel title="Current runtime totals" subtitle="Latest rolled-up usage seen by ClusterSage.">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <StatTile
-                  label="Pod CPU"
-                  value={formatMetricValue(metricsOverview?.pod_cpu_mcores_total || 0, "mcores")}
-                  tone="blue"
-                  detail="All sampled pods"
-                />
-                <StatTile
-                  label="Pod memory"
-                  value={formatMetricValue(metricsOverview?.pod_memory_bytes_total || 0, "bytes")}
-                  tone="emerald"
-                  detail="All sampled pods"
-                />
-                <StatTile
-                  label="Node CPU"
-                  value={formatMetricValue(metricsOverview?.node_cpu_mcores_total || 0, "mcores")}
-                  tone="amber"
-                  detail="All sampled nodes"
-                />
-                <StatTile
-                  label="Node memory"
-                  value={formatMetricValue(metricsOverview?.node_memory_bytes_total || 0, "bytes")}
-                  tone="red"
-                  detail="All sampled nodes"
-                />
-              </div>
-            </Panel>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MiddleStat
+              label="Pod CPU"
+              value={formatMetricValue(metricsOverview?.pod_cpu_mcores_total || 0, "mcores")}
+              detail={timeseriesMetrics.cpu_mcores?.series?.length ? `${timeseriesMetrics.cpu_mcores.series.length} active pod series` : "Waiting for live pod CPU samples"}
+              tone="blue"
+            />
+            <MiddleStat
+              label="Pod memory"
+              value={formatMetricValue(metricsOverview?.pod_memory_bytes_total || 0, "bytes")}
+              detail={timeseriesMetrics.memory_bytes?.series?.length ? `${timeseriesMetrics.memory_bytes.series.length} active pod series` : "Waiting for live pod memory samples"}
+              tone="emerald"
+            />
+            <MiddleStat
+              label="Receive"
+              value={timeseriesMetrics.network_rx_bytes?.series?.length ? `${timeseriesMetrics.network_rx_bytes.series.length}` : "0"}
+              detail="Network receive series in view"
+              tone="amber"
+            />
+            <MiddleStat
+              label="Send"
+              value={timeseriesMetrics.network_tx_bytes?.series?.length ? `${timeseriesMetrics.network_tx_bytes.series.length}` : "0"}
+              detail="Network send series in view"
+              tone="red"
+            />
+          </div>
 
-            <div className="grid gap-4 xl:grid-cols-2">
-              <BreakdownPanel spec={breakdownMetricSpecs[0]} data={latestMetrics.request_cpu_cores} />
-              <BreakdownPanel spec={breakdownMetricSpecs[1]} data={latestMetrics.limit_cpu_cores} />
-              <BreakdownPanel spec={breakdownMetricSpecs[2]} data={latestMetrics.request_memory_bytes} />
-              <BreakdownPanel spec={breakdownMetricSpecs[3]} data={latestMetrics.limit_memory_bytes} />
+          <div className="mt-5 grid gap-4 2xl:grid-cols-[1.15fr_0.85fr]">
+            <div className="space-y-4">
+              <LineMetricPanel spec={lineMetricSpecs[0]} data={timeseriesMetrics.cpu_mcores} />
+              <LineMetricPanel spec={lineMetricSpecs[1]} data={timeseriesMetrics.memory_bytes} />
+              <div className="grid gap-4 xl:grid-cols-2">
+                <LineMetricPanel spec={lineMetricSpecs[2]} data={timeseriesMetrics.network_rx_bytes} />
+                <LineMetricPanel spec={lineMetricSpecs[3]} data={timeseriesMetrics.network_tx_bytes} />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Panel eyebrow="Runtime totals" title="Current runtime totals" subtitle="Latest rolled-up usage seen by ClusterSage.">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <StatTile
+                    label="Pod CPU"
+                    value={formatMetricValue(metricsOverview?.pod_cpu_mcores_total || 0, "mcores")}
+                    tone="blue"
+                    detail="All sampled pods"
+                  />
+                  <StatTile
+                    label="Pod memory"
+                    value={formatMetricValue(metricsOverview?.pod_memory_bytes_total || 0, "bytes")}
+                    tone="emerald"
+                    detail="All sampled pods"
+                  />
+                  <StatTile
+                    label="Node CPU"
+                    value={formatMetricValue(metricsOverview?.node_cpu_mcores_total || 0, "mcores")}
+                    tone="amber"
+                    detail="All sampled nodes"
+                  />
+                  <StatTile
+                    label="Node memory"
+                    value={formatMetricValue(metricsOverview?.node_memory_bytes_total || 0, "bytes")}
+                    tone="red"
+                    detail="All sampled nodes"
+                  />
+                </div>
+              </Panel>
+
+              <div className="grid gap-4 xl:grid-cols-2">
+                <BreakdownPanel spec={breakdownMetricSpecs[0]} data={latestMetrics.request_cpu_cores} />
+                <BreakdownPanel spec={breakdownMetricSpecs[1]} data={latestMetrics.limit_cpu_cores} />
+                <BreakdownPanel spec={breakdownMetricSpecs[2]} data={latestMetrics.request_memory_bytes} />
+                <BreakdownPanel spec={breakdownMetricSpecs[3]} data={latestMetrics.limit_memory_bytes} />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="dashboard-shell-meta">Operational distribution</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-[var(--text)]">Hot spots and workload shape</h2>
-          </div>
-          <p className="max-w-2xl text-sm text-[var(--text-muted)]">
-            Snapshot-backed namespace and workload context, plus top runtime consumers when telemetry is available.
-          </p>
-        </div>
-
-        <div className="grid gap-4 2xl:grid-cols-[0.95fr_1.05fr]">
-          <div className="space-y-4">
-            <NamespaceTable
-              resources={resources}
-              incidents={incidents}
-              namespaceFilter={selectedNamespace}
-              right={<Link href={`/dashboard/clusters/${clusterId}/limits?metric=warning_events`} className="btn-secondary h-9 rounded-xl px-3 text-xs">Set limit</Link>}
-            />
-            <div className="grid gap-4 xl:grid-cols-2">
-              <RollupList title="Top pods by CPU" subtitle="Highest live pod CPU samples." items={metricsOverview?.top_pods_by_cpu || []} />
-              <RollupList title="Top pods by memory" subtitle="Highest live pod memory samples." items={metricsOverview?.top_pods_by_memory || []} />
+        <div className="dashboard-panel">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="dashboard-shell-meta">Operational distribution</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-[var(--text)]">Hot spots and workload shape</h2>
             </div>
+            <p className="max-w-2xl text-sm text-[var(--text-muted)]">
+              Snapshot-backed namespace and workload context, plus top runtime consumers when telemetry is available.
+            </p>
           </div>
 
-          <div className="space-y-4">
-            <WorkloadTable
-              clusterId={clusterId}
-              resources={resources}
-              incidents={incidents}
-              namespaceFilter={selectedNamespace}
-              workloadFilter={selectedWorkload}
-              right={<Link href={`/dashboard/clusters/${clusterId}/limits?metric=pod_restarts`} className="btn-secondary h-9 rounded-xl px-3 text-xs">Set limit</Link>}
-            />
-            <div className="grid gap-4 xl:grid-cols-2">
-              <RollupList title="Top nodes by CPU" subtitle="Highest live node CPU samples." items={metricsOverview?.top_nodes_by_cpu || []} />
-              <RollupList title="Top nodes by memory" subtitle="Highest live node memory samples." items={metricsOverview?.top_nodes_by_memory || []} />
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MiddleStat label="Namespaces" value={`${namespaceOptions.filter((item) => item !== "All").length}`} detail="Discovered from current catalog" tone="blue" />
+            <MiddleStat label="Pods" value={`${podCount}`} detail="Inventory snapshot scope" tone="emerald" />
+            <MiddleStat label="Workloads" value={`${workloadCount}`} detail="Controllers in current snapshot" tone="amber" />
+            <MiddleStat label="Incidents" value={`${openIncidents}`} detail="Linked to visible resources" tone="red" />
+          </div>
+
+          <div className="mt-5 grid gap-4 2xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="space-y-4">
+              <NamespaceTable
+                resources={resources}
+                incidents={incidents}
+                namespaceFilter={selectedNamespace}
+                right={<Link href={`/dashboard/clusters/${clusterId}/limits?metric=warning_events`} className="btn-secondary h-9 rounded-xl px-3 text-xs">Set limit</Link>}
+              />
+              <div className="grid gap-4 xl:grid-cols-2">
+                <RollupList title="Top pods by CPU" subtitle="Highest live pod CPU samples." items={metricsOverview?.top_pods_by_cpu || []} />
+                <RollupList title="Top pods by memory" subtitle="Highest live pod memory samples." items={metricsOverview?.top_pods_by_memory || []} />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <WorkloadTable
+                clusterId={clusterId}
+                resources={resources}
+                incidents={incidents}
+                namespaceFilter={selectedNamespace}
+                workloadFilter={selectedWorkload}
+                right={<Link href={`/dashboard/clusters/${clusterId}/limits?metric=pod_restarts`} className="btn-secondary h-9 rounded-xl px-3 text-xs">Set limit</Link>}
+              />
+              <div className="grid gap-4 xl:grid-cols-2">
+                <RollupList title="Top nodes by CPU" subtitle="Highest live node CPU samples." items={metricsOverview?.top_nodes_by_cpu || []} />
+                <RollupList title="Top nodes by memory" subtitle="Highest live node memory samples." items={metricsOverview?.top_nodes_by_memory || []} />
+              </div>
             </div>
           </div>
         </div>

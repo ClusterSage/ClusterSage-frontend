@@ -55,6 +55,21 @@ function evidenceLines(evidence: Record<string, unknown>): { timestamp?: string 
     }));
 }
 
+function DetailStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="dashboard-metric-card p-4">
+      <p className="dashboard-metric-label">{label}</p>
+      <p className="mt-2 break-words text-base font-semibold text-[var(--text)]">{value}</p>
+    </div>
+  );
+}
+
 export default function ResourceDetail({ params }: { params: Promise<{ clusterId: string; kind: string; namespace: string; name: string }> }) {
   const route = use(params);
   const clusterId = route.clusterId;
@@ -246,7 +261,7 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
       <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">Resource investigation workspace for logs, incidents, AI guidance, and remediation review.</p>
     </section>
 
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] p-2">
+    <div className="dashboard-panel bg-[var(--bg-subtle)] p-2">
       <div className="flex flex-wrap gap-2">
       {tabs.map((item) => <button key={item} className={`rounded-2xl px-4 py-2.5 text-sm font-medium transition ${tab === item ? "bg-[var(--bg-elevated)] text-[var(--primary)] shadow-sm ring-1 ring-[var(--primary-ring)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text)]"}`} onClick={() => setTab(item)}>{item}</button>)}
       </div>
@@ -254,26 +269,26 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
 
     {tab === "Details" && <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"><p className="text-sm text-[var(--text-muted)]">Name</p><p className="mt-2 break-words font-medium text-[var(--text)]">{resource.name}</p></div>
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"><p className="text-sm text-[var(--text-muted)]">Namespace</p><p className="mt-2 font-medium text-[var(--text)]">{resource.namespace || "cluster"}</p></div>
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"><p className="text-sm text-[var(--text-muted)]">Status</p><p className="mt-2 font-medium text-[var(--text)]">{resource.status || "Unknown"}</p></div>
+        <DetailStat label="Name" value={resource.name} />
+        <DetailStat label="Namespace" value={resource.namespace || "cluster"} />
+        <DetailStat label="Status" value={resource.status || "Unknown"} />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 space-y-3">
+        <div className="dashboard-panel space-y-3">
           <h2 className="font-semibold text-[var(--text)]">Metadata</h2>
           <p className="text-sm text-[var(--text-muted)]">Created: {resource.created_at ? new Date(resource.created_at).toLocaleString() : "Unknown"}</p>
           <p className="text-sm text-[var(--text-muted)]">Node: {resource.node_name || "Not available"}</p>
           <p className="text-sm text-[var(--text-muted)]">Restarts: {resource.restart_count ?? "Not available"}</p>
           <p className="text-sm text-[var(--text-muted)]">Owner: {ownerRefs || "Not available"}</p>
         </div>
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 space-y-3">
+        <div className="dashboard-panel space-y-3">
           <h2 className="font-semibold text-[var(--text)]">Runtime</h2>
           <p className="text-sm text-[var(--text-muted)]">Containers: {containerNames || "Not available"}</p>
           <p className="break-words text-sm text-[var(--text-muted)]">Images: {images || "Not available"}</p>
           <p className="text-sm text-[var(--text-muted)]">Phase: {String(status.phase || resource.status || "Unknown")}</p>
         </div>
       </div>
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 space-y-3"><h2 className="font-semibold text-[var(--text)]">Labels</h2>{labels(resource.labels)}</div>
+      <div className="dashboard-panel space-y-3"><h2 className="font-semibold text-[var(--text)]">Labels</h2>{labels(resource.labels)}</div>
     </div>}
 
     {tab === "Logs" && <div className="space-y-4">
@@ -283,7 +298,7 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
       </div>
       {logError && <div className="rounded-3xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-[var(--danger-text)]">{logError}</div>}
       {logs?.length === 0 && <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-[var(--text-muted)]">No logs found for this resource yet.</div>}
-      <div className="max-h-[640px] overflow-auto rounded-3xl bg-[var(--bg-subtle)] p-4 font-mono text-xs leading-6 text-[var(--text)]">
+      <div className="dashboard-panel max-h-[640px] overflow-auto bg-[var(--bg-subtle)] p-4 font-mono text-xs leading-6 text-[var(--text)]">
         {filteredLogs.length === 0 && logs !== null ? <p className="text-[var(--text-muted)]">No log lines match the current filter.</p> : filteredLogs.map((entry, index) => <div key={`${entry.timestamp || "line"}-${index}`} className="grid gap-3 border-b border-[var(--border)] py-1 md:grid-cols-[190px_140px_1fr]"><span className="text-[var(--text-muted)]">{entry.timestamp || "-"}</span><span className="text-[var(--primary)]">{entry.container || "container"}</span><span className="whitespace-pre-wrap break-words">{entry.message}</span></div>)}
       </div>
     </div>}
@@ -337,7 +352,7 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
             </div>
           </button>)}
         </div>
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 space-y-4">
+        <div className="dashboard-panel space-y-4">
           {!selectedIncident ? <p className="text-sm text-[var(--text-muted)]">Select an incident to inspect the evidence and timeline.</p> : <>
             <div className="flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${severityTone(selectedIncident.severity)}`}>{selectedIncident.severity}</span>
@@ -374,7 +389,7 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
     </div>}
 
     {tab === "AI Suggestions" && <div className="space-y-4">
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5">
+      <div className="dashboard-panel">
         <h2 className="text-lg font-semibold text-[var(--text)]">AI Suggestions</h2>
         <p className="mt-2 text-sm text-[var(--text-muted)]">Suggestions appear after ClusterSage has enough incident evidence to recommend a next step. Review the guidance, then approve remediation only when it matches what you want to do.</p>
       </div>
@@ -387,7 +402,7 @@ export default function ResourceDetail({ params }: { params: Promise<{ clusterId
           const actionState = suggestion.latest_action_status ? suggestion.latest_action_status.replace(/_/g, " ") : null;
           const approvalState = suggestion.latest_approval_status ? suggestion.latest_approval_status.replace(/_/g, " ") : null;
           const isApprovingThis = approveIntentId === suggestion.id;
-          return <div key={suggestion.id} className="rounded-3xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 space-y-4">
+          return <div key={suggestion.id} className="dashboard-panel space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
