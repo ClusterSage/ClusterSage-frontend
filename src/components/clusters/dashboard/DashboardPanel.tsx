@@ -27,7 +27,7 @@ export function DashboardPanel({
         </div>
         {right ? <div className="shrink-0">{right}</div> : null}
       </div>
-      <div className={bodyClassName ? `mt-5 ${bodyClassName}` : "mt-5"}>{children}</div>
+      <div className={bodyClassName ? `mt-4 ${bodyClassName}` : "mt-4"}>{children}</div>
     </section>
   );
 }

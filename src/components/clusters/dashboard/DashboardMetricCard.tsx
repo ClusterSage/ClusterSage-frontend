@@ -41,7 +41,7 @@ export function DashboardMetricCard({
   icon: ReactNode;
   label: string;
   value: string;
-  helper: string;
+  helper?: string;
   accent?: string;
   footer?: ReactNode;
   trend?: number[];
@@ -51,19 +51,19 @@ export function DashboardMetricCard({
 
   return (
     <section className="dashboard-metric-card">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <div className="dashboard-metric-icon" style={{ color: accent }}>
             {icon}
           </div>
           <div className="min-w-0">
             <p className="dashboard-metric-label">{label}</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight text-[var(--text)]">{value}</p>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">{helper}</p>
+            <p className="mt-2 break-words text-[clamp(1.4rem,2vw,2.15rem)] font-semibold tracking-tight text-[var(--text)]">{value}</p>
+            {helper ? <p className="mt-1 text-xs text-[var(--text-soft)]">{helper}</p> : null}
           </div>
         </div>
         {path ? (
-          <div className="hidden h-14 w-[88px] shrink-0 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)]/45 p-2.5 text-[var(--text-soft)] md:block" role="img" aria-label={trendLabel || `${label} trend`}>
+          <div className="hidden h-12 w-[84px] shrink-0 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)]/45 p-2 text-[var(--text-soft)] md:block" role="img" aria-label={trendLabel || `${label} trend`}>
             <svg viewBox="0 0 60 36" className="h-full w-full">
               <path d={path} fill="none" stroke={accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
