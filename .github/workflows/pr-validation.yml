@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate frontend
+    name: Lint, Build, and Security Scan
     runs-on: ubuntu-latest
 
     steps:
@@ -40,36 +40,25 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Validate security scan configuration
-        if: github.event.pull_request.head.repo.fork == false
-        shell: bash
-        run: |
-          set -euo pipefail
-          [ -n "${{ secrets.SONAR_TOKEN }}" ] || { echo "Missing SONAR_TOKEN secret."; exit 1; }
-          [ -n "${{ secrets.SONAR_HOST_URL }}" ] || { echo "Missing SONAR_HOST_URL secret."; exit 1; }
-          [ -n "${{ secrets.SNYK_TOKEN }}" ] || { echo "Missing SNYK_TOKEN secret."; exit 1; }
-
       - name: SonarQube scan
         if: github.event.pull_request.head.repo.fork == false
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v8.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           projectBaseDir: .
           args: >
-            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
-            -Dsonar.projectName=${{ github.event.repository.name }}
-            -Dsonar.sources=src
+            "-Dsonar.projectKey=ClusterSage_clustersage-frontend"
+            "-Dsonar.projectName=clustersage-frontend"
 
-      - name: Install Snyk CLI
+      - name: Set up Snyk CLI
         if: github.event.pull_request.head.repo.fork == false
         uses: snyk/actions/setup@master
 
-      - name: Run Snyk dependency scan
+      - name: Run Snyk scan
         if: github.event.pull_request.head.repo.fork == false
-        shell: bash
-        run: snyk test --severity-threshold=high --file=package.json
+        run: snyk test --all-projects --detection-depth=2
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
