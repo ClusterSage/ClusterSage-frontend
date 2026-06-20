@@ -32,3 +32,5 @@ Key variables:
 ```bash
 docker build -t clustersage-frontend .
 ```
+
+The image uses a multi-stage build and the runtime container runs as the non-root `node` user.
