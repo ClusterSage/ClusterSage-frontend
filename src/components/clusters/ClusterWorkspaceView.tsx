@@ -27,30 +27,10 @@ function resourceHref(clusterId: string, resource: Pick<ResourceSummary, "kind" 
   return `/dashboard/clusters/${clusterId}/resources/${encodeURIComponent(resource.kind)}/${encodeURIComponent(namespace)}/${encodeURIComponent(resource.name)}`;
 }
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-}
-
 function severityTone(severity: string) {
   if (severity === "critical") return "bg-[var(--danger-bg)] text-[var(--danger-text)]";
   if (severity === "major") return "bg-[var(--warning-bg)] text-[var(--warning-text)]";
   return "bg-[var(--info-bg)] text-[var(--info-text)]";
-}
-
-function confidenceTone(confidence: string | null | undefined) {
-  if (confidence === "high") return "bg-emerald-500/15 text-emerald-300";
-  if (confidence === "medium") return "bg-amber-500/15 text-amber-300";
-  return "bg-[var(--bg-subtle)] text-[var(--text-muted)]";
-}
-
-function freshnessLabel(message: AIConversationMessage | null) {
-  const freshness = asRecord(message?.data_freshness);
-  const latest = typeof freshness.latest_evidence_at === "string" ? freshness.latest_evidence_at : null;
-  const truncated = freshness.truncated === true;
-  if (!latest && !truncated) return "No freshness metadata";
-  if (latest && truncated) return `Evidence from ${new Date(latest).toLocaleString()} and truncated`;
-  if (latest) return `Evidence from ${new Date(latest).toLocaleString()}`;
-  return "Evidence was truncated";
 }
 
 function WorkspaceStat({
@@ -274,8 +254,6 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
       setChatLoading(false);
     }
   }
-
-  const latestAssistantMessage = [...conversationMessages].reverse().find((item) => item.role === "assistant") || null;
 
   if (error) return <div className="card border-[var(--danger-bg)] bg-[var(--bg-elevated)] text-[var(--danger-text)]">{error}</div>;
   if (!cluster || !resources) return <div className="card bg-[var(--bg-elevated)] text-[var(--text-muted)]">Loading cluster resources...</div>;
@@ -549,23 +527,13 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-[var(--text)]">ClusterSage AI</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--text-muted)]">
-                Ask freely, iterate naturally, and investigate this cluster with answers grounded in incidents, snapshots, logs, deployments, and stored evidence.
+                Ask naturally and investigate this cluster in a focused chat.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="rounded-full border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-1.5 font-medium text-[var(--text-muted)]">
-                {cluster.name} · {cluster.provider}
+                {cluster.name} | {cluster.provider}
               </span>
-              {latestAssistantMessage && (
-                <>
-                  <span className={`rounded-full px-3 py-1.5 font-semibold uppercase ${confidenceTone(latestAssistantMessage.confidence)}`}>
-                    {latestAssistantMessage.confidence || "low"} confidence
-                  </span>
-                  <span className="rounded-full border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-1.5 font-medium text-[var(--text-muted)]">
-                    {freshnessLabel(latestAssistantMessage)}
-                  </span>
-                </>
-              )}
             </div>
           </div>
         </div>
@@ -576,7 +544,7 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="dashboard-panel-title">Chats</h2>
-                <p className="dashboard-panel-subtitle">Cluster-scoped history</p>
+                <p className="dashboard-panel-subtitle">Conversation history</p>
               </div>
               <button
                 className="btn-secondary h-10 rounded-xl px-4"
@@ -618,17 +586,16 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
         </aside>
         <section className="dashboard-panel flex min-h-[720px] flex-col overflow-hidden p-0">
           <div className="border-b border-[var(--border)] px-4 py-4 sm:px-6">
-            <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Cluster investigation chat</h2>
-            <p className="mt-1 text-sm text-[var(--text-soft)]">Natural-language investigation for this cluster</p>
+            <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Chat</h2>
+            <p className="mt-1 text-sm text-[var(--text-soft)]">Ask questions about this cluster.</p>
           </div>
           <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(31,111,255,0.04),transparent_20%),var(--bg-elevated)] px-4 py-6 sm:px-6">
             {conversationMessages.length === 0 ? (
               <div className="mx-auto flex min-h-full max-w-3xl flex-col items-center justify-center py-8 text-center">
                 <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-subtle)] px-6 py-8 shadow-sm">
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">Ready to investigate</p>
-                  <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--text)]">What do you want to know about this cluster?</h3>
+                  <h3 className="text-2xl font-semibold tracking-tight text-[var(--text)]">What do you want to know?</h3>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">
-                    You can type anything directly. Suggested prompts are optional and just here to help you get started.
+                    Start with a quick question or use one of these prompts.
                   </p>
                   <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
                     {exampleQuestions.map((item) => (
@@ -646,8 +613,6 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
             ) : (
               <div className="mx-auto max-w-3xl space-y-8">
                 {conversationMessages.map((message) => {
-                  const evidence = Array.isArray(message.evidence_references) ? message.evidence_references.map((item) => asRecord(item)) : [];
-                  const tools = Array.isArray(message.tool_execution_metadata) ? message.tool_execution_metadata.map((item) => asRecord(item)) : [];
                   const isUser = message.role === "user";
                   return (
                     <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -659,31 +624,6 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
                           </div>
                           <p className={`mt-3 whitespace-pre-wrap text-[15px] leading-7 ${isUser ? "text-white" : "text-[var(--text)]"}`}>{message.content}</p>
                         </div>
-                        {!isUser && evidence.length > 0 && (
-                          <div className="mt-3 rounded-[24px] border border-[var(--border)] bg-[var(--bg-subtle)] p-4">
-                            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Sources</h3>
-                            <div className="mt-3 grid gap-2">
-                              {evidence.map((item, index) => (
-                                <div key={index} className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3">
-                                  <p className="text-sm font-medium text-[var(--text)]">{String(item.title || item.source_id || `Source ${index + 1}`)}</p>
-                                  <p className="mt-1 text-xs text-[var(--text-soft)]">
-                                    {String(item.source_type || "evidence")}
-                                    {typeof item.timestamp === "string" ? ` · ${new Date(String(item.timestamp)).toLocaleString()}` : ""}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {!isUser && tools.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {tools.map((item, index) => (
-                              <span key={index} className="rounded-full border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)]">
-                                {String(item.tool_name || "tool")} · {String(item.status || "ok")}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
@@ -732,19 +672,7 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
                   rows={1}
                 />
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 px-2 pb-1">
-                  <div className="flex flex-wrap gap-2">
-                    {conversationMessages.length === 0 &&
-                      exampleQuestions.slice(0, 2).map((item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          className="rounded-full border border-[var(--border)] bg-[var(--bg-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] transition hover:border-[var(--primary)] hover:text-[var(--text)]"
-                          onClick={() => setChatInput(item)}
-                        >
-                          {item}
-                        </button>
-                      ))}
-                  </div>
+                  <div className="text-xs text-[var(--text-soft)]">Enter sends. Shift+Enter adds a new line.</div>
                   <div className="flex items-center gap-2">
                     {chatError && lastSubmittedMessage && (
                       <button type="button" className="btn-secondary rounded-full px-4" onClick={() => void sendChatMessage(lastSubmittedMessage)}>
@@ -756,10 +684,6 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
                     </button>
                   </div>
                 </div>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-[var(--text-soft)]">
-                <p>Enter sends. Shift+Enter adds a new line.</p>
-                <p>Short prompts like &quot;hi&quot; are allowed now.</p>
               </div>
             </form>
             {chatError && (
@@ -773,3 +697,4 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
     </div>
   );
 }
+
