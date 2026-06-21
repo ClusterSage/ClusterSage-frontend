@@ -3,23 +3,15 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import type { AIClusterQuery, AIIncident, Cluster, ClusterMetricsOverview, ResourceSummary } from "@/types/api";
+import type { AIChatResponse, AIConversation, AIConversationDetail, AIConversationMessage, AIIncident, Cluster, ClusterMetricsOverview, ResourceSummary } from "@/types/api";
 import { ClusterDashboardView } from "@/components/clusters/ClusterDashboardView";
 
 const preferredKinds = ["Pod", "Deployment", "Service", "ReplicaSet", "StatefulSet", "DaemonSet", "Job", "CronJob", "Namespace"];
 const exampleQuestions = [
-  "Show critical incidents in the last 24 hours.",
-  "Which pod restarted the most today?",
-  "Find logs containing database connection failure.",
-  "Which namespace has the most warning events?",
-  "Summarize the health of this cluster.",
-];
-
-const supportedClusterIntents = [
-  "CrashLoopBackOff and restart-heavy workloads",
-  "Critical and major incident summaries",
-  "Warning-event hotspots by namespace",
-  "Log lookups across recent activity",
+  "Why are the payment pods restarting repeatedly?",
+  "Did these errors begin after the latest deployment?",
+  "Search recent logs for database connection failures.",
+  "Summarize the current health of this cluster.",
 ];
 
 type ClusterView = "dashboard" | "resources" | "incidents" | "ai";
@@ -39,9 +31,20 @@ function severityTone(severity: string) {
   return "bg-[var(--info-bg)] text-[var(--info-text)]";
 }
 
-function questionIntentLabel(query: AIClusterQuery | null) {
-  const parsed = asRecord(query?.parsed_query);
-  return typeof parsed.intent === "string" ? parsed.intent : "unsupported";
+function confidenceTone(confidence: string | null | undefined) {
+  if (confidence === "high") return "bg-emerald-500/15 text-emerald-300";
+  if (confidence === "medium") return "bg-amber-500/15 text-amber-300";
+  return "bg-[var(--bg-subtle)] text-[var(--text-muted)]";
+}
+
+function freshnessLabel(message: AIConversationMessage | null) {
+  const freshness = asRecord(message?.data_freshness);
+  const latest = typeof freshness.latest_evidence_at === "string" ? freshness.latest_evidence_at : null;
+  const truncated = freshness.truncated === true;
+  if (!latest && !truncated) return "No freshness metadata";
+  if (latest && truncated) return `Evidence from ${new Date(latest).toLocaleString()} and truncated`;
+  if (latest) return `Evidence from ${new Date(latest).toLocaleString()}`;
+  return "Evidence was truncated";
 }
 
 function WorkspaceStat({
@@ -81,10 +84,14 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
   const [incidentSearch, setIncidentSearch] = useState("");
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [incidentDrawerOpen, setIncidentDrawerOpen] = useState(false);
-  const [clusterQuestion, setClusterQuestion] = useState(exampleQuestions[0]);
-  const [clusterQueryLoading, setClusterQueryLoading] = useState(false);
-  const [clusterQueryError, setClusterQueryError] = useState("");
-  const [clusterQueryResult, setClusterQueryResult] = useState<AIClusterQuery | null>(null);
+  const [conversations, setConversations] = useState<AIConversation[]>([]);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [conversationMessages, setConversationMessages] = useState<AIConversationMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState("");
+  const [lastSubmittedMessage, setLastSubmittedMessage] = useState("");
+  const [progressIndex, setProgressIndex] = useState(0);
 
   useEffect(() => {
     Promise.all([api<Cluster>(`/api/clusters/${clusterId}`), api<ResourceSummary[]>(`/api/clusters/${clusterId}/resources`)])
@@ -118,6 +125,34 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
       .catch((err) => setIncidentError(err instanceof Error ? err.message : "Failed to load incidents"))
       .finally(() => setIncidentLoading(false));
   }, [view, incidents, incidentLoading, clusterId]);
+
+  useEffect(() => {
+    if (view !== "ai") return;
+    setChatError("");
+    api<AIConversation[]>(`/api/clusters/${clusterId}/ai/conversations`)
+      .then((data) => {
+        setConversations(data);
+        setSelectedConversationId((current) => current || data[0]?.id || null);
+      })
+      .catch((err) => setChatError(err instanceof Error ? err.message : "Failed to load conversations"));
+  }, [clusterId, view]);
+
+  useEffect(() => {
+    if (view !== "ai") return;
+    if (!selectedConversationId) {
+      setConversationMessages([]);
+      return;
+    }
+    api<AIConversationDetail>(`/api/clusters/${clusterId}/ai/conversations/${selectedConversationId}`)
+      .then((data) => setConversationMessages(data.messages))
+      .catch((err) => setChatError(err instanceof Error ? err.message : "Failed to load conversation"));
+  }, [clusterId, selectedConversationId, view]);
+
+  useEffect(() => {
+    if (!chatLoading) return;
+    const timer = window.setInterval(() => setProgressIndex((value) => (value + 1) % 4), 1600);
+    return () => window.clearInterval(timer);
+  }, [chatLoading]);
 
   const kinds = useMemo(() => {
     const present = new Set(resources?.map((item) => item.kind) || []);
@@ -192,30 +227,41 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
     }
   }
 
-  async function askClusterSage() {
-    setClusterQueryLoading(true);
-    setClusterQueryError("");
+  async function refreshConversations(preferredConversationId?: string | null) {
     try {
-      const data = await api<AIClusterQuery>(`/api/clusters/${clusterId}/ai/query`, {
-        method: "POST",
-        body: JSON.stringify({ question: clusterQuestion }),
-      });
-      setClusterQueryResult(data);
+      const data = await api<AIConversation[]>(`/api/clusters/${clusterId}/ai/conversations`);
+      setConversations(data);
+      if (preferredConversationId) setSelectedConversationId(preferredConversationId);
+      else setSelectedConversationId((current) => current || data[0]?.id || null);
     } catch (err) {
-      setClusterQueryError(err instanceof Error ? err.message : "Failed to run cluster query");
-    } finally {
-      setClusterQueryLoading(false);
+      setChatError(err instanceof Error ? err.message : "Failed to load conversations");
     }
   }
 
-  const clusterQueryItems = useMemo(() => {
-    const result = asRecord(clusterQueryResult?.result);
-    return Array.isArray(result.items) ? result.items.map((item) => asRecord(item)) : [];
-  }, [clusterQueryResult]);
+  async function sendChatMessage(message: string) {
+    const trimmed = message.trim();
+    if (trimmed.length < 3) return;
+    setChatLoading(true);
+    setChatError("");
+    setLastSubmittedMessage(trimmed);
+    try {
+      const data = await api<AIChatResponse>(`/api/clusters/${clusterId}/ai/chat`, {
+        method: "POST",
+        body: JSON.stringify({ conversation_id: selectedConversationId, message: trimmed }),
+      });
+      setChatInput("");
+      await refreshConversations(data.conversation_id);
+      const detail = await api<AIConversationDetail>(`/api/clusters/${clusterId}/ai/conversations/${data.conversation_id}`);
+      setConversationMessages(detail.messages);
+      setSelectedConversationId(data.conversation_id);
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : "Failed to send message");
+    } finally {
+      setChatLoading(false);
+    }
+  }
 
-  const clusterQuerySummary = asRecord(clusterQueryResult?.result);
-  const clusterQueryIncidentCounts = asRecord(clusterQuerySummary.incident_counts);
-  const clusterQueryResourceCounts = asRecord(clusterQuerySummary.resource_counts);
+  const latestAssistantMessage = [...conversationMessages].reverse().find((item) => item.role === "assistant") || null;
 
   if (error) return <div className="card border-[var(--danger-bg)] bg-[var(--bg-elevated)] text-[var(--danger-text)]">{error}</div>;
   if (!cluster || !resources) return <div className="card bg-[var(--bg-elevated)] text-[var(--text-muted)]">Loading cluster resources...</div>;
@@ -431,58 +477,152 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
       <section className="dashboard-shell-header">
         <p className="dashboard-shell-meta">Cluster investigation</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">ClusterSage AI</h1>
-        <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">Ask questions about this cluster and review grounded answers built from its existing incidents, resources, logs, and event summaries.</p>
+        <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">Investigate the selected cluster with grounded answers backed by incidents, snapshots, deployments, logs, stored documents, and the curated ClusterSage knowledge base.</p>
       </section>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {supportedClusterIntents.map((item) => (
-          <div key={item} className="dashboard-metric-card p-4">
-            <p className="dashboard-metric-label">Supported</p>
-            <p className="mt-2 text-sm font-medium leading-6 text-[var(--text)]">{item}</p>
-            <p className="mt-2 text-xs text-[var(--text-soft)]">Grounded in incidents, resources, logs, and event summaries already collected for this cluster.</p>
+      <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="dashboard-panel">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="dashboard-panel-title">Conversations</h2>
+              <p className="dashboard-panel-subtitle">Cluster-scoped investigation history</p>
+            </div>
+            <button
+              className="btn-secondary h-10 rounded-xl px-4"
+              onClick={() => {
+                setSelectedConversationId(null);
+                setConversationMessages([]);
+                setChatError("");
+              }}
+            >
+              New
+            </button>
           </div>
-        ))}
-      </div>
-      <div className="dashboard-panel">
-        <textarea className="input min-h-28 w-full border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]" value={clusterQuestion} onChange={(event) => setClusterQuestion(event.target.value)} placeholder="Ask about cluster incidents, restarts, logs, or warning events" />
-        <div className="mt-3 flex flex-wrap gap-2">
-          {exampleQuestions.map((item) => <button key={item} className="btn-secondary" onClick={() => setClusterQuestion(item)}>{item}</button>)}
-        </div>
-        <div className="mt-4">
-          <button className="btn" onClick={() => void askClusterSage()} disabled={clusterQueryLoading || clusterQuestion.trim().length < 3}>{clusterQueryLoading ? "Running query..." : "Run query"}</button>
-        </div>
-      </div>
-      {clusterQueryError && <div className="rounded-2xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-[var(--danger-text)]">{clusterQueryError}</div>}
-      {clusterQueryResult && <div className="dashboard-panel">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-blue-500/15 px-2.5 py-1 text-xs font-semibold text-[var(--primary)]">{questionIntentLabel(clusterQueryResult)}</span>
-          <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)]">{clusterQueryResult.ai_model || "ClusterSage"}</span>
-          <span className="text-xs text-[var(--text-soft)]">{new Date(clusterQueryResult.created_at).toLocaleString()}</span>
-        </div>
-        <div className="mt-4">
-          <h3 className="font-semibold text-[var(--text)]">Answer</h3>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">{clusterQueryResult.answer_summary || "Summary unavailable."}</p>
-        </div>
-        {clusterQueryItems.length > 0 && <div className="mt-4 space-y-3">
-          <h3 className="font-semibold text-[var(--text)]">Result set</h3>
-          {clusterQueryItems.map((item, index) => <div key={index} className="rounded-2xl border border-[var(--border)] p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-1">
-                <p className="font-medium text-[var(--text)]">{String(item.title || item.pod_name || item.workload_name || item.namespace || `Result ${index + 1}`)}</p>
-                <p className="text-sm text-[var(--text-muted)]">{String(item.summary || item.message || item.incident_type || item.status || "")}</p>
+          <div className="mt-4 space-y-2">
+            {conversations.length === 0 && (
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4 text-sm text-[var(--text-muted)]">
+                Ask ClusterSage about incidents, workloads, deployments, logs, stored cluster state, or how ClusterSage works.
               </div>
-              <div className="flex flex-wrap gap-2 text-xs">
-                {typeof item.severity === "string" && <span className={`rounded-full px-2.5 py-1 font-semibold uppercase ${severityTone(String(item.severity))}`}>{String(item.severity)}</span>}
-                {typeof item.warning_event_count === "number" && <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 font-medium text-[var(--text-muted)]">{item.warning_event_count} warnings</span>}
-                {typeof item.restart_count === "number" && <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 font-medium text-[var(--text-muted)]">{item.restart_count} restarts</span>}
+            )}
+            {conversations.map((conversation) => (
+              <button
+                key={conversation.id}
+                className={`block w-full rounded-2xl border p-4 text-left transition ${
+                  selectedConversationId === conversation.id
+                    ? "border-[var(--primary)] bg-[var(--bg-subtle)]"
+                    : "border-[var(--border)] bg-[var(--bg-elevated)] hover:border-[var(--border-strong)]"
+                }`}
+                onClick={() => setSelectedConversationId(conversation.id)}
+              >
+                <p className="text-sm font-semibold text-[var(--text)]">{conversation.title}</p>
+                <p className="mt-2 text-xs text-[var(--text-soft)]">{new Date(conversation.updated_at).toLocaleString()}</p>
+              </button>
+            ))}
+          </div>
+        </aside>
+        <section className="dashboard-panel flex min-h-[640px] flex-col">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
+            <div>
+              <h2 className="dashboard-panel-title">Cluster investigation chat</h2>
+              <p className="dashboard-panel-subtitle">{cluster.name} · {cluster.provider}</p>
+            </div>
+            {latestAssistantMessage && (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className={`rounded-full px-2.5 py-1 font-semibold uppercase ${confidenceTone(latestAssistantMessage.confidence)}`}>{latestAssistantMessage.confidence || "low"} confidence</span>
+                <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 font-medium text-[var(--text-muted)]">{freshnessLabel(latestAssistantMessage)}</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-5 flex-1 space-y-4 overflow-y-auto">
+            {conversationMessages.length === 0 && (
+              <div className="rounded-3xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-subtle)] p-6">
+                <h3 className="text-lg font-semibold text-[var(--text)]">Start a cluster investigation</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Ask about incidents, deployments, restart spikes, recent logs, or ClusterSage behavior. Answers stay grounded in stored evidence for this cluster only.</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {exampleQuestions.map((item) => (
+                    <button key={item} className="btn-secondary" onClick={() => setChatInput(item)}>
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {conversationMessages.map((message) => {
+              const evidence = Array.isArray(message.evidence_references) ? message.evidence_references.map((item) => asRecord(item)) : [];
+              const tools = Array.isArray(message.tool_execution_metadata) ? message.tool_execution_metadata.map((item) => asRecord(item)) : [];
+              return (
+                <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-4xl rounded-3xl border p-4 sm:p-5 ${message.role === "user" ? "border-[var(--primary)] bg-[var(--primary)]/10" : "border-[var(--border)] bg-[var(--bg-elevated)]"}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-soft)]">{message.role === "user" ? "Operator" : "ClusterSage"}</p>
+                      <p className="text-xs text-[var(--text-soft)]">{new Date(message.created_at).toLocaleString()}</p>
+                    </div>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">{message.content}</p>
+                    {message.role === "assistant" && evidence.length > 0 && (
+                      <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-soft)]">Evidence</h3>
+                        <div className="mt-3 space-y-2">
+                          {evidence.map((item, index) => (
+                            <div key={index} className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-3">
+                              <p className="text-sm font-medium text-[var(--text)]">{String(item.title || item.source_id || `Source ${index + 1}`)}</p>
+                              <p className="mt-1 text-xs text-[var(--text-soft)]">{String(item.source_type || "evidence")}{typeof item.timestamp === "string" ? ` · ${new Date(String(item.timestamp)).toLocaleString()}` : ""}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {message.role === "assistant" && tools.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {tools.map((item, index) => (
+                          <span key={index} className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)]">
+                            {String(item.tool_name || "tool")} · {String(item.status || "ok")}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {chatLoading && (
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4 text-sm text-[var(--text-muted)]">
+                {["Checking recent incidents", "Reviewing the latest cluster snapshot", "Searching recent stored logs", "Reviewing ClusterSage documentation"][progressIndex]}
+              </div>
+            )}
+          </div>
+          <div className="mt-5 border-t border-[var(--border)] pt-4">
+            <textarea
+              className="input min-h-32 w-full border-[var(--border-strong)] bg-[var(--bg-subtle)] text-[var(--text)]"
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void sendChatMessage(chatInput);
+                }
+              }}
+              placeholder="Ask why a workload is unhealthy, whether a rollout lines up with failures, what ClusterSage collects, or what to investigate next."
+            />
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-[var(--text-soft)]">Enter sends. Shift+Enter adds a new line.</p>
+              <div className="flex flex-wrap gap-2">
+                {chatError && lastSubmittedMessage && (
+                  <button className="btn-secondary" onClick={() => void sendChatMessage(lastSubmittedMessage)}>
+                    Retry
+                  </button>
+                )}
+                <button className="btn" onClick={() => void sendChatMessage(chatInput)} disabled={chatLoading || chatInput.trim().length < 3}>
+                  {chatLoading ? "Investigating..." : "Send"}
+                </button>
               </div>
             </div>
-          </div>)}
-        </div>}
-        {!clusterQueryItems.length && (Object.keys(clusterQueryIncidentCounts).length > 0 || Object.keys(clusterQueryResourceCounts).length > 0) && <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {Object.keys(clusterQueryIncidentCounts).length > 0 && <div className="rounded-2xl border border-[var(--border)] p-4"><h3 className="font-semibold text-[var(--text)]">Incident counts</h3><pre className="mt-3 overflow-auto whitespace-pre-wrap text-xs text-[var(--text-muted)]">{JSON.stringify(clusterQueryIncidentCounts, null, 2)}</pre></div>}
-          {Object.keys(clusterQueryResourceCounts).length > 0 && <div className="rounded-2xl border border-[var(--border)] p-4"><h3 className="font-semibold text-[var(--text)]">Resource counts</h3><pre className="mt-3 overflow-auto whitespace-pre-wrap text-xs text-[var(--text-muted)]">{JSON.stringify(clusterQueryResourceCounts, null, 2)}</pre></div>}
-        </div>}
-      </div>}
+          </div>
+          {chatError && (
+            <div className="mt-4 rounded-2xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-sm text-[var(--danger-text)]">
+              {chatError}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

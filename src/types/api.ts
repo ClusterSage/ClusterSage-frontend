@@ -10,6 +10,43 @@ export type ResourceAISuggestion = { id: string; cluster_id: string; incident_id
 export type RemediationApprovalResult = { suggestion_id: string; approval_id: string; approval_status: string; action_id?: string | null; action_status?: string | null; message: string };
 export type RemediationAction = { id: string; cluster_id: string; suggestion_id: string; approval_id: string; action_type: string; action_payload: Record<string, unknown>; status: string; requested_by_user_id?: string | null; picked_up_by_agent_id?: string | null; requested_at: string; picked_up_at?: string | null; completed_at?: string | null; error_message?: string | null; result?: Record<string, unknown> | null };
 export type AIClusterQuery = { id: string; cluster_id: string; user_id?: string | null; question: string; parsed_query?: Record<string, unknown> | null; answer_summary?: string | null; result?: Record<string, unknown> | null; ai_model?: string | null; created_at: string };
+export type AIConversation = {
+  id: string;
+  cluster_id: string;
+  user_id: string;
+  title: string;
+  summary?: string | null;
+  created_at: string;
+  updated_at: string;
+  archived_at?: string | null;
+};
+export type AIConversationMessage = {
+  id: string;
+  conversation_id: string;
+  role: "user" | "assistant" | string;
+  content: string;
+  evidence_references?: Record<string, unknown>[] | null;
+  tool_execution_metadata?: Record<string, unknown>[] | null;
+  ai_model?: string | null;
+  prompt_version?: string | null;
+  confidence?: "low" | "medium" | "high" | string | null;
+  data_freshness?: Record<string, unknown> | null;
+  created_at: string;
+};
+export type AIConversationDetail = {
+  conversation: AIConversation;
+  messages: AIConversationMessage[];
+};
+export type AIChatResponse = {
+  conversation_id: string;
+  message_id: string;
+  answer: string;
+  evidence: Record<string, unknown>[];
+  confidence: "low" | "medium" | "high" | string;
+  data_freshness: Record<string, unknown>;
+  tools_used: string[];
+  created_at: string;
+};
 export type ClusterMetricRollupItem = {
   label: string;
   namespace?: string | null;
