@@ -34,3 +34,5 @@ docker build -t clustersage-frontend .
 ```
 
 The image uses a multi-stage build and the runtime container runs as the non-root `node` user.
+
+Branch protection test note: temporary no-op README change for validating PR-only merges into `main`.
