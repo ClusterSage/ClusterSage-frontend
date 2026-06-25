@@ -79,15 +79,34 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
   const [lastSubmittedMessage, setLastSubmittedMessage] = useState("");
   const [progressIndex, setProgressIndex] = useState(0);
   const chatComposerRef = useRef<HTMLTextAreaElement | null>(null);
+  const needsResources = view === "dashboard" || view === "resources";
 
   useEffect(() => {
-    Promise.all([api<Cluster>(`/api/clusters/${clusterId}`), api<ResourceSummary[]>(`/api/clusters/${clusterId}/resources`)])
-      .then(([clusterData, resourceData]) => {
+    let cancelled = false;
+    setError("");
+    setCluster(null);
+    if (needsResources) {
+      setResources(null);
+    }
+
+    async function loadClusterContext() {
+      try {
+        const clusterData = await api<Cluster>(`/api/clusters/${clusterId}`);
+        if (cancelled) return;
         setCluster(clusterData);
-        setResources(resourceData);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load cluster"));
-  }, [clusterId]);
+        if (!needsResources) return;
+        const resourceData = await api<ResourceSummary[]>(`/api/clusters/${clusterId}/resources`);
+        if (!cancelled) setResources(resourceData);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load cluster");
+      }
+    }
+
+    void loadClusterContext();
+    return () => {
+      cancelled = true;
+    };
+  }, [clusterId, needsResources]);
 
   useEffect(() => {
     if (view !== "dashboard") return;
@@ -256,10 +275,12 @@ export function ClusterWorkspaceView({ clusterId, view }: { clusterId: string; v
   }
 
   if (error) return <div className="card border-[var(--danger-bg)] bg-[var(--bg-elevated)] text-[var(--danger-text)]">{error}</div>;
-  if (!cluster || !resources) return <div className="card bg-[var(--bg-elevated)] text-[var(--text-muted)]">Loading cluster resources...</div>;
+  if (!cluster || (needsResources && !resources)) {
+    return <div className="card bg-[var(--bg-elevated)] text-[var(--text-muted)]">Loading cluster resources...</div>;
+  }
 
   if (view === "dashboard") {
-    return <ClusterDashboardView clusterId={clusterId} cluster={cluster} resources={resources} incidents={incidents || []} metricsOverview={metricsOverview} metricsError={metricsError} />;
+    return <ClusterDashboardView clusterId={clusterId} cluster={cluster} resources={resources || []} incidents={incidents || []} metricsOverview={metricsOverview} metricsError={metricsError} />;
   }
 
   if (view === "resources") {
