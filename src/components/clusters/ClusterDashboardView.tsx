@@ -754,11 +754,11 @@ export function ClusterDashboardView({
 
       if (!cancelled) {
         const latestEntries = latestResults
-          .filter((result): result is PromiseFulfilledResult<readonly [string, ClusterMetricLatest]> => result.status === "fulfilled")
-          .map((result) => result.value);
+          .map((result) => (result.status === "fulfilled" ? result.value : null))
+          .filter((value): value is readonly [(typeof latestMetricKeys)[number], ClusterMetricLatest] => value !== null);
         const timeseriesEntries = timeseriesResults
-          .filter((result): result is PromiseFulfilledResult<readonly [string, ClusterMetricTimeseries]> => result.status === "fulfilled")
-          .map((result) => result.value);
+          .map((result) => (result.status === "fulfilled" ? result.value : null))
+          .filter((value): value is readonly [(typeof timeseriesMetricKeys)[number], ClusterMetricTimeseries] => value !== null);
         const failedCount =
           latestResults.filter((result) => result.status === "rejected").length +
           timeseriesResults.filter((result) => result.status === "rejected").length;
