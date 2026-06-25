@@ -644,6 +644,7 @@ export function ClusterDashboardView({
   const [latestMetrics, setLatestMetrics] = useState<Record<string, ClusterMetricLatest>>({});
   const [timeseriesMetrics, setTimeseriesMetrics] = useState<Record<string, ClusterMetricTimeseries>>({});
   const [alertEvents, setAlertEvents] = useState<AlertEvent[]>([]);
+  const [metricLoadError, setMetricLoadError] = useState("");
 
   useEffect(() => {
     api<ClusterMetricFilterCatalog>(`/api/clusters/${clusterId}/metrics/catalog`)
@@ -668,6 +669,9 @@ export function ClusterDashboardView({
 
     async function loadMetrics() {
       setLoading(true);
+      setMetricLoadError("");
+      setLatestMetrics({});
+      setTimeseriesMetrics({});
       const selectedWindowOption = timeRangeOptions.find((option) => option.value === selectedWindow) || timeRangeOptions[2];
       const base = new URLSearchParams();
       if (selectedNamespace !== "All") base.set("namespace", selectedNamespace);
@@ -707,7 +711,7 @@ export function ClusterDashboardView({
       latestDefinitions.fs_capacity_bytes.set("metric_name", "fs_capacity_bytes");
       latestDefinitions.fs_capacity_bytes.set("scope", "node");
 
-      const latestEntries = await Promise.all(
+      const latestResults = await Promise.allSettled(
         latestMetricKeys.map(async (key) => [key, await api<ClusterMetricLatest>(`/api/clusters/${clusterId}/metrics/latest?${latestDefinitions[key].toString()}`)] as const),
       );
 
@@ -744,19 +748,39 @@ export function ClusterDashboardView({
       timeseriesDefinitions.network_tx.set("metric_name", "network_tx_bytes");
       timeseriesDefinitions.network_tx.set("scope", "node");
 
-      const timeseriesEntries = await Promise.all(
+      const timeseriesResults = await Promise.allSettled(
         timeseriesMetricKeys.map(async (key) => [key, await api<ClusterMetricTimeseries>(`/api/clusters/${clusterId}/metrics/timeseries?${timeseriesDefinitions[key].toString()}`)] as const),
       );
 
       if (!cancelled) {
-        setLatestMetrics(Object.fromEntries(latestEntries));
-        setTimeseriesMetrics(Object.fromEntries(timeseriesEntries));
+        const latestEntries = latestResults
+          .map((result) => (result.status === "fulfilled" ? result.value : null))
+          .filter((value): value is readonly [(typeof latestMetricKeys)[number], ClusterMetricLatest] => value !== null);
+        const timeseriesEntries = timeseriesResults
+          .map((result) => (result.status === "fulfilled" ? result.value : null))
+          .filter((value): value is readonly [(typeof timeseriesMetricKeys)[number], ClusterMetricTimeseries] => value !== null);
+        const failedCount =
+          latestResults.filter((result) => result.status === "rejected").length +
+          timeseriesResults.filter((result) => result.status === "rejected").length;
+
+        if (latestEntries.length > 0) setLatestMetrics(Object.fromEntries(latestEntries));
+        if (timeseriesEntries.length > 0) setTimeseriesMetrics(Object.fromEntries(timeseriesEntries));
+        if (failedCount > 0) {
+          setMetricLoadError(
+            failedCount === 1
+              ? "One metric request failed during loading. The dashboard is showing partial data."
+              : `${failedCount} metric requests failed during loading. The dashboard is showing partial data.`,
+          );
+        }
         setLoading(false);
       }
     }
 
     void loadMetrics().catch(() => {
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setMetricLoadError("Failed to load dashboard metrics.");
+        setLoading(false);
+      }
     });
 
     return () => {
@@ -945,6 +969,7 @@ export function ClusterDashboardView({
 
       {catalogError ? <div className="rounded-xl border border-[var(--danger-bg)] bg-[var(--danger-bg)] p-4 text-[var(--danger-text)]">{catalogError}</div> : null}
       {metricsError ? <div className="rounded-xl border border-[var(--warning-bg)] bg-[var(--warning-bg)] p-4 text-[var(--warning-text)]">{metricsError}</div> : null}
+      {metricLoadError ? <div className="rounded-xl border border-[var(--warning-bg)] bg-[var(--warning-bg)] p-4 text-[var(--warning-text)]">{metricLoadError}</div> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <DashboardMetricCard icon={iconFor("cluster")} label="Clusters" value="1" helper={cluster.name} accent="#6ea8ff" />
